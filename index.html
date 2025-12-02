@@ -78,6 +78,88 @@ const app = Vue.createApp({
 
   methods: {
     async load() {
+      try {
+        const res = await fetch(this.syncUrl);
+        const data = await res.json();
+        this.user = data.user;
+      } catch (e) {
+        console.error("Load error:", e);
+      }
+    },
+
+    change(amount) {
+      this.user.balance += amount;
+    },
+
+    async save() {
+      try {
+        await fetch(this.syncUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ balance: this.user.balance })
+        });
+
+        tg.HapticFeedback.notificationOccurred("success");
+        // Removed tg.close() to stop auto-close issue
+      } catch (e) {
+        console.error("Save error:", e);
+      }
+    }
+  },
+
+  mounted() {
+    this.load();
+  }
+});
+
+app.mount("#app");
+</script>
+
+</body>
+</html>
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin: 15px 0;
+    }
+
+    .controls button {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <h2>Balance WebApp Demo</h2>
+
+  <div class="card">
+    <h3>Hello, {{ user.username || "Player" }}</h3>
+    <h2>Balance: {{ user.balance }}</h2>
+
+    <div class="controls">
+      <button @click="change(-5)">-5</button>
+      <button @click="change(5)">+5</button>
+    </div>
+
+    <button @click="save">Save Balance</button>
+  </div>
+</div>
+
+<script>
+const tg = Telegram.WebApp;
+tg.ready();
+
+const app = Vue.createApp({
+  data() {
+    return {
+      syncUrl: new URLSearchParams(location.search).get("sync"),
+      user: { username: "", balance: 0 }
+    }
+  },
+
+  methods: {
+    async load() {
       const res = await fetch(this.syncUrl);
       const data = await res.json();
       this.user = data.user;
