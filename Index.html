@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Balance WebApp</title>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: system-ui, sans-serif;
+      background: var(--tg-theme-bg-color);
+      color: var(--tg-theme-text-color);
+    }
+
+    .card {
+      background: var(--tg-theme-secondary-bg-color);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 0 10px rgba(0,0,0,0.15);
+    }
+
+    button {
+      width: 100%;
+      margin-top: 12px;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      color: var(--tg-theme-button-text-color);
+      background: var(--tg-theme-button-color);
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin: 15px 0;
+    }
+
+    .controls button {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <h2>Balance WebApp Demo</h2>
+
+  <div class="card">
+    <h3>Hello, {{ user.username || "Player" }}</h3>
+    <h2>Balance: {{ user.balance }}</h2>
+
+    <div class="controls">
+      <button @click="change(-5)">-5</button>
+      <button @click="change(5)">+5</button>
+    </div>
+
+    <button @click="save">Save Balance</button>
+  </div>
+</div>
+
+<script>
+const tg = Telegram.WebApp;
+tg.ready();
+
+const app = Vue.createApp({
+  data() {
+    return {
+      syncUrl: new URLSearchParams(location.search).get("sync"),
+      user: { username: "", balance: 0 }
+    }
+  },
+
+  methods: {
+    async load() {
+      const res = await fetch(this.syncUrl);
+      const data = await res.json();
+      this.user = data.user;
+    },
+
+    change(amount) {
+      this.user.balance += amount;
+    },
+
+    async save() {
+      await fetch(this.syncUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ balance: this.user.balance })
+      });
+
+      tg.HapticFeedback.notificationOccurred("success");
+      tg.close();
+    }
+  },
+
+  mounted() {
+    this.load();
+  }
+});
+
+app.mount("#app");
+</script>
+
+</body>
+</html>
