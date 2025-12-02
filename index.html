@@ -1,119 +1,71 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Balance WebApp</title>
+<meta charset="UTF-8">
+<title>Balance WebApp</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
-
-  <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: system-ui, sans-serif;
-      background: var(--tg-theme-bg-color);
-      color: var(--tg-theme-text-color);
-    }
-
-    .card {
-      background: var(--tg-theme-secondary-bg-color);
-      border-radius: 12px;
-      padding: 20px;
-      text-align: center;
-      box-shadow: 0 0 10px rgba(0,0,0,0.15);
-    }
-
-    button {
-      width: 100%;
-      margin-top: 12px;
-      padding: 14px;
-      border: none;
-      border-radius: 10px;
-      font-size: 16px;
-      color: var(--tg-theme-button-text-color);
-      background: var(--tg-theme-button-color);
-    }
-
-    .controls {
-      display: flex;
-      gap: 12px;
-      margin: 15px 0;
-    }
-
-    .controls button {
-      flex: 1;
-    }
-  </style>
+<style>
+body { font-family:sans-serif; padding:20px; }
+.btn { padding:10px 15px; margin:5px; border:none; border-radius:4px; color:#fff; cursor:pointer; }
+.dec { background:#dc3545; }
+.inc { background:#28a745; }
+.save { background:#007bff; }
+</style>
 </head>
+
 <body>
+  <h2>Hello <span id="name"></span></h2>
+  <h3>Balance: <span id="bal">0</span></h3>
 
-<div id="app">
-  <h2>Balance WebApp Demo</h2>
+  <button class="btn dec" onclick="change(-5)">-5</button>
+  <button class="btn inc" onclick="change(5)">+5</button>
 
-  <div class="card">
-    <h3>Hello, {{ user.username || "Player" }}</h3>
-    <h2>Balance: {{ user.balance }}</h2>
-
-    <div class="controls">
-      <button @click="change(-5)">-5</button>
-      <button @click="change(5)">+5</button>
-    </div>
-
-    <button @click="save">Save Balance</button>
-  </div>
-</div>
+  <button class="btn save" onclick="save()">Save Balance</button>
 
 <script>
-const tg = Telegram.WebApp;
-tg.ready();
 
-const app = Vue.createApp({
-  data() {
-    return {
-      syncUrl: new URLSearchParams(location.search).get("sync"),
-      user: { username: "", balance: 0 }
-    }
-  },
+Telegram.WebApp.ready();
 
-  methods: {
-    async load() {
-      try {
-        const res = await fetch(this.syncUrl);
-        const data = await res.json();
-        this.user = data.user;
-      } catch (e) {
-        console.error("Load error:", e);
-      }
-    },
+let url = new URL(window.location.href);
+let sync = url.searchParams.get("sync");
 
-    change(amount) {
-      this.user.balance += amount;
-    },
+let state = { name:"", balance:0 };
 
-    async save() {
-      try {
-        await fetch(this.syncUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ balance: this.user.balance })
-        });
+function load(){
+  fetch(sync, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ action:"load" })
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    state.name = d.user.name;
+    state.balance = d.user.balance;
+    document.getElementById("name").textContent = state.name;
+    document.getElementById("bal").textContent = state.balance;
+  });
+}
 
-        tg.HapticFeedback.notificationOccurred("success");
-        // Removed tg.close() to stop auto-close issue
-      } catch (e) {
-        console.error("Save error:", e);
-      }
-    }
-  },
+function change(v){
+  state.balance += v;
+  document.getElementById("bal").textContent = state.balance;
+}
 
-  mounted() {
-    this.load();
-  }
-});
+function save(){
+  fetch(sync, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ action:"save", balance: state.balance })
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    Telegram.WebApp.showAlert("Saved!");
+  });
+}
 
-app.mount("#app");
+load();
+
 </script>
-
 </body>
 </html>
