@@ -14,21 +14,266 @@
       --card: #ffffff;
       --accent: #2a8bf2;
       --muted: #6b7280;
+      --error: #ef4444;
+      --success: #10b981;
     }
-    html,body { height:100%; margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial; background:var(--bg); color:#0f172a; }
-    .wrap { max-width:720px; margin:28px auto; padding:20px; }
-    .card { background:var(--card); border-radius:12px; box-shadow: 0 6px 18px rgba(2,6,23,0.06); padding:18px; }
-    h1 { margin:0 0 8px; font-size:20px; }
-    .meta { color:var(--muted); font-size:13px; margin-bottom:12px; }
-    .balance { font-size:40px; font-weight:700; color:var(--accent); margin:12px 0; }
-    .btns { display:flex; gap:10px; margin:12px 0; flex-wrap:wrap; }
-    button { cursor:pointer; border:0; padding:10px 14px; border-radius:10px; color:white; font-weight:600; }
-    .btn-danger { background:#ef4444; }
-    .btn-success { background:#10b981; }
-    .btn-primary { background:var(--accent); width:100%; }
-    .log { margin-top:14px; font-family:monospace; font-size:13px; color:#111827; background:#fafafa; padding:10px; border-radius:8px; max-height:160px; overflow:auto; border:1px solid #eee; }
-    .small { font-size:13px; color:var(--muted); }
-    .error { color:#b91c1c; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body { 
+      height: 100%; 
+      margin: 0; 
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif; 
+      background: var(--bg); 
+      color: #0f172a; 
+    }
+    .wrap { 
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card { 
+      background: var(--card); 
+      border-radius: 16px; 
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); 
+      padding: 24px; 
+      width: 100%;
+      max-width: 400px;
+    }
+    h1 { 
+      margin: 0 0 12px; 
+      font-size: 24px; 
+      font-weight: 700;
+      color: #1e293b;
+    }
+    .meta { 
+      color: var(--muted); 
+      font-size: 14px; 
+      margin-bottom: 20px; 
+      line-height: 1.5;
+    }
+    .balance-container {
+      text-align: center;
+      margin: 24px 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+    }
+    .balance-label {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    .balance { 
+      font-size: 48px; 
+      font-weight: 700; 
+      color: var(--accent); 
+      line-height: 1;
+    }
+    .balance-currency {
+      font-size: 20px;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+    .btns { 
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px; 
+      margin: 24px 0;
+    }
+    button { 
+      cursor: pointer; 
+      border: 0; 
+      padding: 14px 16px; 
+      border-radius: 10px; 
+      color: white; 
+      font-weight: 600;
+      font-size: 15px;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    button:active {
+      transform: scale(0.98);
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    .btn-danger { 
+      background: var(--error);
+    }
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+    .btn-success { 
+      background: var(--success);
+    }
+    .btn-success:hover {
+      background: #059669;
+    }
+    .btn-primary { 
+      background: var(--accent);
+      width: 100%;
+      padding: 16px;
+      font-size: 16px;
+      margin-top: 8px;
+    }
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
+    .log { 
+      margin-top: 20px; 
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace; 
+      font-size: 12px; 
+      color: #334155; 
+      background: #f8fafc; 
+      padding: 16px; 
+      border-radius: 8px; 
+      max-height: 200px; 
+      overflow: auto; 
+      border: 1px solid #e2e8f0; 
+      line-height: 1.5;
+    }
+    .log-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .log-clear {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 11px;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .log-clear:hover {
+      background: #e2e8f0;
+    }
+    .log-item {
+      margin-bottom: 4px;
+      word-break: break-all;
+    }
+    .log-item:last-child {
+      margin-bottom: 0;
+    }
+    .small { 
+      font-size: 13px; 
+      color: var(--muted); 
+      margin-bottom: 4px;
+    }
+    .error { 
+      color: var(--error);
+      background: #fef2f2;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 16px;
+      font-size: 14px;
+      border-left: 4px solid var(--error);
+    }
+    .success { 
+      color: var(--success);
+      background: #f0fdf4;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 16px;
+      font-size: 14px;
+      border-left: 4px solid var(--success);
+    }
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      color: var(--muted);
+    }
+    .loading-spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #e2e8f0;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 12px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .user-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 18px;
+    }
+    .user-details {
+      flex: 1;
+    }
+    .user-name {
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 2px;
+    }
+    .user-id {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .sync-info {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 12px;
+      text-align: center;
+      word-break: break-all;
+      padding: 8px;
+      background: #f8fafc;
+      border-radius: 6px;
+      border: 1px dashed #e2e8f0;
+    }
+    .sync-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .sync-status.connected {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .sync-status.disconnected {
+      background: #fee2e2;
+      color: #991b1b;
+    }
   </style>
 </head>
 <body>
@@ -37,35 +282,82 @@
       <h1>{{ botName }} — Balance Demo</h1>
       <div class="meta">Secure per-user sync via webhook (POST-only).</div>
 
-      <div v-if="loading" class="small">Loading user…</div>
+      <div v-if="loading" class="loading">
+        <div class="loading-spinner"></div>
+        <span>Loading user data...</span>
+      </div>
 
-      <div v-else>
-        <div class="small">Hello, <strong>{{ user.first_name || user.username || 'User' }}</strong></div>
-        <div class="balance">{{ user.balance }}</div>
-
-        <div class="btns">
-          <button class="btn-danger" @click="change(-5)">-5</button>
-          <button class="btn-danger" @click="change(-10)">-10</button>
-          <button class="btn-success" @click="change(5)">+5</button>
-          <button class="btn-success" @click="change(10)">+10</button>
-        </div>
-
-        <div style="margin-top:8px;">
-          <button class="btn-primary" :disabled="saving" @click="save">
-            {{ saving ? 'Saving…' : 'Save Balance' }}
+      <div v-else-if="error" class="error">
+        {{ error }}
+        <div style="margin-top: 8px;">
+          <button class="btn-primary" @click="retryLoad" style="background: var(--error);">
+            Retry
           </button>
-        </div>
-
-        <div style="margin-top:12px;">
-          <div class="small">Sync URL: <span class="small" v-if="syncUrl">{{ shortSync }}</span><span v-else class="error">missing</span></div>
-        </div>
-
-        <div class="log" v-if="logs.length">
-          <div v-for="(l,i) in logs" :key="i">{{ l }}</div>
         </div>
       </div>
 
-      <div v-if="error" style="margin-top:12px;" class="error">{{ error }}</div>
+      <div v-else>
+        <div class="user-info">
+          <div class="user-avatar">
+            {{ user.first_name ? user.first_name[0] : 'U' }}
+          </div>
+          <div class="user-details">
+            <div class="user-name">{{ user.first_name || user.username || 'User' }}</div>
+            <div class="user-id">ID: {{ user.id }}</div>
+          </div>
+        </div>
+
+        <div class="balance-container">
+          <div class="balance-label">Current Balance</div>
+          <div class="balance">
+            {{ user.balance }}
+            <span class="balance-currency">💎</span>
+          </div>
+        </div>
+
+        <div class="btns">
+          <button class="btn-danger" @click="change(-10)" :disabled="user.balance < 10">
+            <span>-10</span>
+          </button>
+          <button class="btn-danger" @click="change(-5)" :disabled="user.balance < 5">
+            <span>-5</span>
+          </button>
+          <button class="btn-success" @click="change(5)">
+            <span>+5</span>
+          </button>
+          <button class="btn-success" @click="change(10)">
+            <span>+10</span>
+          </button>
+        </div>
+
+        <div>
+          <button class="btn-primary" @click="save" :disabled="saving || !hasChanges">
+            <span v-if="saving">Saving...</span>
+            <span v-else>Save Balance {{ hasChanges ? '*' : '' }}</span>
+          </button>
+        </div>
+
+        <div class="sync-info">
+          <span class="sync-status" :class="syncConnected ? 'connected' : 'disconnected'">
+            <span>{{ syncConnected ? '✓ Connected' : '✗ Disconnected' }}</span>
+          </span>
+          <div style="margin-top: 4px; font-size: 10px;">Sync URL loaded: {{ syncUrl ? 'Yes' : 'No' }}</div>
+        </div>
+
+        <div v-if="successMessage" class="success">
+          {{ successMessage }}
+        </div>
+
+        <div class="log" v-if="logs.length > 0">
+          <div class="log-title">
+            <span>Activity Log</span>
+            <button class="log-clear" @click="clearLogs">Clear</button>
+          </div>
+          <div v-for="(log, index) in logs" :key="index" class="log-item">
+            {{ log }}
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -73,129 +365,264 @@
   (function () {
     const tg = window.Telegram?.WebApp || null;
     if (tg) {
-      try { tg.ready(); tg.expand(); } catch(e) { console.warn("tg.ready failed", e); }
+      try { 
+        tg.ready(); 
+        tg.expand(); 
+        tg.setHeaderColor('#2a8bf2');
+        tg.setBackgroundColor('#f6f7fb');
+      } catch(e) { 
+        console.warn("Telegram WebApp init failed", e); 
+      }
     }
 
     const urlParams = new URLSearchParams(window.location.search);
     const syncUrl = urlParams.get('sync') || urlParams.get('syncUrl') || null;
-    const botNameParam = urlParams.get('botName') || document.title || 'Balance WebApp';
+    const botNameParam = urlParams.get('botName') || 'Balance Demo';
 
     // Vue app
-    const { createApp, ref, reactive, computed } = Vue;
+    const { createApp, ref, reactive, computed, onMounted } = Vue;
 
     createApp({
       setup() {
-        const user = reactive({ id: null, username: null, first_name: null, balance: 0 });
+        const user = reactive({ 
+          id: null, 
+          username: null, 
+          first_name: null, 
+          balance: 0,
+          originalBalance: 0
+        });
         const loading = ref(true);
         const saving = ref(false);
         const error = ref('');
+        const successMessage = ref('');
         const logs = reactive([]);
         const botName = ref(botNameParam);
+        const syncConnected = ref(false);
+
+        const hasChanges = computed(() => {
+          return user.balance !== user.originalBalance;
+        });
 
         function log(msg) {
           const t = new Date().toLocaleTimeString();
-          logs.unshift(`[${t}] ${msg}`);
-          if (logs.length > 100) logs.pop();
-          console.debug(msg);
+          const logMsg = `[${t}] ${msg}`;
+          logs.unshift(logMsg);
+          if (logs.length > 50) logs.pop();
+          console.log(logMsg);
         }
 
-        const shortSync = computed(() => {
-          if (!syncUrl) return '';
-          try {
-            const u = new URL(syncUrl);
-            return u.hostname + u.pathname + (u.search ? u.search.slice(0,40) + '…' : '');
-          } catch(e) { return syncUrl.slice(0,80); }
-        });
+        function clearLogs() {
+          logs.length = 0;
+          log("Log cleared");
+        }
 
-        // robust POST helper that expects JSON response.
+        function retryLoad() {
+          error.value = '';
+          successMessage.value = '';
+          load();
+        }
+
+        // POST helper with better error handling
         async function postJson(payload) {
-          if (!syncUrl) throw new Error("Sync URL missing");
-          log(`POST ${syncUrl} -> ${JSON.stringify(payload)}`);
-          const res = await fetch(syncUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-
-          const ct = res.headers.get('content-type') || '';
-          log(`HTTP ${res.status} content-type: ${ct}`);
-          // if server returned HTML or non-json, capture text and throw
-          if (!ct.includes('application/json')) {
-            const txt = await res.text();
-            log("Non-JSON response (first 512 chars): " + txt.slice(0,512).replace(/\n/g,' '));
-            throw new Error("Server did not return JSON");
+          if (!syncUrl) {
+            throw new Error("Sync URL is missing. Please open from bot.");
           }
-          const data = await res.json();
-          log("Response JSON: " + JSON.stringify(data));
-          return data;
+          
+          log(`➡️ POST ${payload.method}`);
+          const startTime = Date.now();
+          
+          try {
+            const response = await fetch(syncUrl, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+              body: JSON.stringify(payload)
+            });
+
+            const responseTime = Date.now() - startTime;
+            log(`⬅️ Response ${response.status} (${responseTime}ms)`);
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              log(`❌ HTTP ${response.status}: ${errorText.substring(0, 200)}`);
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+              const text = await response.text();
+              log(`⚠️ Non-JSON response: ${text.substring(0, 200)}`);
+              throw new Error("Server returned non-JSON response");
+            }
+
+            const data = await response.json();
+            log(`✅ Success: ${JSON.stringify(data).substring(0, 200)}`);
+            return data;
+
+          } catch (err) {
+            log(`❌ Fetch error: ${err.message}`);
+            throw err;
+          }
         }
 
         async function load() {
           loading.value = true;
           error.value = '';
+          successMessage.value = '';
+          
           try {
-            log("Loading user (POST {method: 'load'})");
+            log("Loading user data...");
             const data = await postJson({ method: 'load' });
+            
             if (!data || !data.success) {
-              const e = (data && data.error) ? data.error : "Invalid load response";
-              throw new Error(e);
+              const errorMsg = data?.error || 'Invalid response from server';
+              throw new Error(errorMsg);
             }
-            const u = data.user || {};
+
+            if (!data.user) {
+              throw new Error('No user data received');
+            }
+
+            const u = data.user;
             user.id = u.id || null;
             user.username = u.username || null;
             user.first_name = u.first_name || null;
             user.balance = parseInt(u.balance || 0, 10);
-            log("Loaded user: " + (user.first_name || user.username || user.id));
+            user.originalBalance = user.balance;
+            
+            syncConnected.value = true;
+            log(`User loaded: ${user.first_name || user.username || user.id}`);
+            log(`Balance: ${user.balance}`);
+            
+            // Haptic feedback
+            try { 
+              tg?.HapticFeedback?.notificationOccurred?.('success'); 
+            } catch(e) {}
+
           } catch (err) {
-            console.error(err);
-            error.value = "Load error: " + (err.message || err);
-            log("❌ Load error: " + (err.message || err));
+            console.error('Load failed:', err);
+            error.value = `Failed to load: ${err.message}`;
+            syncConnected.value = false;
+            log(`Load failed: ${err.message}`);
+            
+            try { 
+              tg?.HapticFeedback?.notificationOccurred?.('error'); 
+            } catch(e) {}
+            
           } finally {
             loading.value = false;
           }
         }
 
         async function save() {
+          if (!hasChanges.value) {
+            successMessage.value = 'No changes to save';
+            setTimeout(() => successMessage.value = '', 2000);
+            return;
+          }
+
           saving.value = true;
           error.value = '';
+          successMessage.value = '';
+          
           try {
-            log("Saving balance: " + user.balance);
-            const data = await postJson({ method: 'save', balance: user.balance });
+            log(`Saving balance: ${user.balance}`);
+            const data = await postJson({ 
+              method: 'save', 
+              balance: user.balance 
+            });
+            
             if (!data || !data.success) {
-              throw new Error((data && data.error) ? data.error : "Save failed");
+              const errorMsg = data?.error || 'Save failed';
+              throw new Error(errorMsg);
             }
-            log("Saved OK: " + JSON.stringify(data));
-            // optional: haptic
-            try { tg?.HapticFeedback?.notificationOccurred?.('success'); } catch(e) {}
+
+            user.originalBalance = user.balance;
+            successMessage.value = `✅ Balance saved: ${user.balance}`;
+            log(`Balance saved successfully: ${user.balance}`);
+            
+            // Haptic feedback
+            try { 
+              tg?.HapticFeedback?.notificationOccurred?.('success'); 
+            } catch(e) {}
+            
+            // Auto-clear success message after 3 seconds
+            setTimeout(() => {
+              successMessage.value = '';
+            }, 3000);
+
           } catch (err) {
-            console.error(err);
-            error.value = "Save error: " + (err.message || err);
-            log("❌ Save error: " + (err.message || err));
-            try { tg?.HapticFeedback?.notificationOccurred?.('error'); } catch(e) {}
+            console.error('Save failed:', err);
+            error.value = `Save failed: ${err.message}`;
+            log(`Save failed: ${err.message}`);
+            
+            try { 
+              tg?.HapticFeedback?.notificationOccurred?.('error'); 
+            } catch(e) {}
+            
           } finally {
             saving.value = false;
           }
         }
 
         function change(delta) {
-          user.balance = parseInt(user.balance || 0, 10) + delta;
-          log("Balance changed to " + user.balance);
-          try { tg?.HapticFeedback?.impactOccurred?.('light'); } catch(e){}
-        }
-
-        // initialize
-        (async () => {
-          if (!syncUrl) {
-            error.value = "Missing sync URL parameter. Open from bot /start button.";
-            loading.value = false;
-            log("Missing sync URL parameter in page URL.");
+          const newBalance = user.balance + delta;
+          
+          if (newBalance < 0) {
+            log(`Cannot go below 0 (attempted: ${newBalance})`);
+            try { 
+              tg?.HapticFeedback?.notificationOccurred?.('warning'); 
+            } catch(e) {}
             return;
           }
-          log("SYNC URL = " + syncUrl);
-          await load();
-        })();
 
-        return { user, loading, saving, error, logs, botName, load, save, change, shortSync, syncUrl };
+          user.balance = newBalance;
+          log(`Balance changed: ${delta > 0 ? '+' : ''}${delta} = ${user.balance}`);
+          
+          // Haptic feedback
+          try { 
+            if (delta > 0) {
+              tg?.HapticFeedback?.impactOccurred?.('light');
+            } else {
+              tg?.HapticFeedback?.impactOccurred?.('medium');
+            }
+          } catch(e) {}
+        }
+
+        // Initialize on mount
+        onMounted(async () => {
+          log("App initialized");
+          log(`Bot: ${botName.value}`);
+          log(`Sync URL: ${syncUrl ? 'Present' : 'Missing'}`);
+          
+          if (!syncUrl) {
+            error.value = "❌ Missing sync URL. Please open this app from your Telegram bot using the /start command.";
+            loading.value = false;
+            return;
+          }
+
+          await load();
+        });
+
+        return { 
+          user, 
+          loading, 
+          saving, 
+          error, 
+          successMessage,
+          logs, 
+          botName, 
+          syncUrl,
+          syncConnected,
+          hasChanges,
+          load, 
+          save, 
+          change, 
+          retryLoad,
+          clearLogs
+        };
       }
     }).mount('#app');
   })();
