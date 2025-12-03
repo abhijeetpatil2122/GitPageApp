@@ -56,7 +56,12 @@ function log(msg){
 }
 
 // -------- SYNC URL DETECTION --------
-let syncUrl = null;
+// Best, safest, 100% working
+let rawHash = location.hash.substring(1);
+let sync = decodeURIComponent(rawHash);
+
+log("Final sync URL:");
+log(sync);
 
 // 1️⃣ Try Telegram initDataUnsafe.start_param
 if (tg.initDataUnsafe && tg.initDataUnsafe.start_param) {
