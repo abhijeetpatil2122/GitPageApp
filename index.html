@@ -1,152 +1,204 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Balance App</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  <title>Balance WebApp</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.min.js"></script>
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: var(--tg-theme-bg-color, #f2f2f2);
-      color: var(--tg-theme-text-color, #000);
-      margin: 0;
-      padding: 20px;
-      text-align: center;
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --accent: #2a8bf2;
+      --muted: #6b7280;
     }
-    .box {
-      max-width: 400px;
-      margin: auto;
-      background: var(--tg-theme-secondary-bg-color, #fff);
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0,0,0,.1);
-    }
-    button {
-      padding: 10px 15px;
-      margin: 5px;
-      border: none;
-      border-radius: 8px;
-      background: var(--tg-theme-button-color, #007bff);
-      color: var(--tg-theme-button-text-color, #fff);
-      cursor: pointer;
-      font-size: 16px;
-    }
-    .danger { background: #dc3545 !important; }
-    .success { background: #28a745 !important; }
-    .log { font-size: 12px; margin-top: 10px; text-align: left; opacity: 0.7; }
+    html,body { height:100%; margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial; background:var(--bg); color:#0f172a; }
+    .wrap { max-width:720px; margin:28px auto; padding:20px; }
+    .card { background:var(--card); border-radius:12px; box-shadow: 0 6px 18px rgba(2,6,23,0.06); padding:18px; }
+    h1 { margin:0 0 8px; font-size:20px; }
+    .meta { color:var(--muted); font-size:13px; margin-bottom:12px; }
+    .balance { font-size:40px; font-weight:700; color:var(--accent); margin:12px 0; }
+    .btns { display:flex; gap:10px; margin:12px 0; flex-wrap:wrap; }
+    button { cursor:pointer; border:0; padding:10px 14px; border-radius:10px; color:white; font-weight:600; }
+    .btn-danger { background:#ef4444; }
+    .btn-success { background:#10b981; }
+    .btn-primary { background:var(--accent); width:100%; }
+    .log { margin-top:14px; font-family:monospace; font-size:13px; color:#111827; background:#fafafa; padding:10px; border-radius:8px; max-height:160px; overflow:auto; border:1px solid #eee; }
+    .small { font-size:13px; color:var(--muted); }
+    .error { color:#b91c1c; }
   </style>
 </head>
-
 <body>
-  <div id="app" class="box">
-    <h1>{{ botName }}</h1>
-    <h3>Hello, {{ user.first_name || user.username || "User" }}</h3>
+  <div id="app" class="wrap">
+    <div class="card">
+      <h1>{{ botName }} — Balance Demo</h1>
+      <div class="meta">Secure per-user sync via webhook (POST-only).</div>
 
-    <h2>Balance: {{ balance }}</h2>
+      <div v-if="loading" class="small">Loading user…</div>
 
-    <div>
-      <button class="danger" @click="add(-5)">-5</button>
-      <button class="success" @click="add(5)">+5</button>
-    </div>
+      <div v-else>
+        <div class="small">Hello, <strong>{{ user.first_name || user.username || 'User' }}</strong></div>
+        <div class="balance">{{ user.balance }}</div>
 
-    <button @click="save">SAVE</button>
+        <div class="btns">
+          <button class="btn-danger" @click="change(-5)">-5</button>
+          <button class="btn-danger" @click="change(-10)">-10</button>
+          <button class="btn-success" @click="change(5)">+5</button>
+          <button class="btn-success" @click="change(10)">+10</button>
+        </div>
 
-    <div class="log">
-      <p v-for="(l,i) in logs" :key="i">🟦 {{ l }}</p>
+        <div style="margin-top:8px;">
+          <button class="btn-primary" :disabled="saving" @click="save">
+            {{ saving ? 'Saving…' : 'Save Balance' }}
+          </button>
+        </div>
+
+        <div style="margin-top:12px;">
+          <div class="small">Sync URL: <span class="small" v-if="syncUrl">{{ shortSync }}</span><span v-else class="error">missing</span></div>
+        </div>
+
+        <div class="log" v-if="logs.length">
+          <div v-for="(l,i) in logs" :key="i">{{ l }}</div>
+        </div>
+      </div>
+
+      <div v-if="error" style="margin-top:12px;" class="error">{{ error }}</div>
     </div>
   </div>
 
-<script>
-const tg = window.Telegram.WebApp;
-tg.ready();
-tg.expand();
-
-const App = {
-  data() {
-    return {
-      syncUrl: "",
-      botName: "Balance App",
-      user: {},
-      balance: 0,
-      logs: []
+  <script>
+  (function () {
+    const tg = window.Telegram?.WebApp || null;
+    if (tg) {
+      try { tg.ready(); tg.expand(); } catch(e) { console.warn("tg.ready failed", e); }
     }
-  },
 
-  methods: {
-    log(x) { this.logs.push(x); },
+    const urlParams = new URLSearchParams(window.location.search);
+    const syncUrl = urlParams.get('sync') || urlParams.get('syncUrl') || null;
+    const botNameParam = urlParams.get('botName') || document.title || 'Balance WebApp';
 
-    async load() {
-      this.log("🔵 Sending LOAD request...");
+    // Vue app
+    const { createApp, ref, reactive, computed } = Vue;
 
-      const res = await fetch(this.syncUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "load" })
-      });
+    createApp({
+      setup() {
+        const user = reactive({ id: null, username: null, first_name: null, balance: 0 });
+        const loading = ref(true);
+        const saving = ref(false);
+        const error = ref('');
+        const logs = reactive([]);
+        const botName = ref(botNameParam);
 
-      const data = await res.json().catch(e => this.log("JSON ERROR: " + e));
+        function log(msg) {
+          const t = new Date().toLocaleTimeString();
+          logs.unshift(`[${t}] ${msg}`);
+          if (logs.length > 100) logs.pop();
+          console.debug(msg);
+        }
 
-      this.log("Load response: " + JSON.stringify(data));
+        const shortSync = computed(() => {
+          if (!syncUrl) return '';
+          try {
+            const u = new URL(syncUrl);
+            return u.hostname + u.pathname + (u.search ? u.search.slice(0,40) + '…' : '');
+          } catch(e) { return syncUrl.slice(0,80); }
+        });
 
-      if (data.success) {
-        this.user = data.user;
-        this.balance = data.user.balance;
-      } else {
-        this.log("❌ Load failed");
+        // robust POST helper that expects JSON response.
+        async function postJson(payload) {
+          if (!syncUrl) throw new Error("Sync URL missing");
+          log(`POST ${syncUrl} -> ${JSON.stringify(payload)}`);
+          const res = await fetch(syncUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          const ct = res.headers.get('content-type') || '';
+          log(`HTTP ${res.status} content-type: ${ct}`);
+          // if server returned HTML or non-json, capture text and throw
+          if (!ct.includes('application/json')) {
+            const txt = await res.text();
+            log("Non-JSON response (first 512 chars): " + txt.slice(0,512).replace(/\n/g,' '));
+            throw new Error("Server did not return JSON");
+          }
+          const data = await res.json();
+          log("Response JSON: " + JSON.stringify(data));
+          return data;
+        }
+
+        async function load() {
+          loading.value = true;
+          error.value = '';
+          try {
+            log("Loading user (POST {method: 'load'})");
+            const data = await postJson({ method: 'load' });
+            if (!data || !data.success) {
+              const e = (data && data.error) ? data.error : "Invalid load response";
+              throw new Error(e);
+            }
+            const u = data.user || {};
+            user.id = u.id || null;
+            user.username = u.username || null;
+            user.first_name = u.first_name || null;
+            user.balance = parseInt(u.balance || 0, 10);
+            log("Loaded user: " + (user.first_name || user.username || user.id));
+          } catch (err) {
+            console.error(err);
+            error.value = "Load error: " + (err.message || err);
+            log("❌ Load error: " + (err.message || err));
+          } finally {
+            loading.value = false;
+          }
+        }
+
+        async function save() {
+          saving.value = true;
+          error.value = '';
+          try {
+            log("Saving balance: " + user.balance);
+            const data = await postJson({ method: 'save', balance: user.balance });
+            if (!data || !data.success) {
+              throw new Error((data && data.error) ? data.error : "Save failed");
+            }
+            log("Saved OK: " + JSON.stringify(data));
+            // optional: haptic
+            try { tg?.HapticFeedback?.notificationOccurred?.('success'); } catch(e) {}
+          } catch (err) {
+            console.error(err);
+            error.value = "Save error: " + (err.message || err);
+            log("❌ Save error: " + (err.message || err));
+            try { tg?.HapticFeedback?.notificationOccurred?.('error'); } catch(e) {}
+          } finally {
+            saving.value = false;
+          }
+        }
+
+        function change(delta) {
+          user.balance = parseInt(user.balance || 0, 10) + delta;
+          log("Balance changed to " + user.balance);
+          try { tg?.HapticFeedback?.impactOccurred?.('light'); } catch(e){}
+        }
+
+        // initialize
+        (async () => {
+          if (!syncUrl) {
+            error.value = "Missing sync URL parameter. Open from bot /start button.";
+            loading.value = false;
+            log("Missing sync URL parameter in page URL.");
+            return;
+          }
+          log("SYNC URL = " + syncUrl);
+          await load();
+        })();
+
+        return { user, loading, saving, error, logs, botName, load, save, change, shortSync, syncUrl };
       }
-    },
-
-    add(n) {
-      this.balance += n;
-      this.log("Balance changed → " + this.balance);
-      tg.HapticFeedback.impactOccurred("light");
-    },
-
-    async save() {
-      this.log("🔵 Saving balance...");
-
-      const res = await fetch(this.syncUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "save",
-          balance: this.balance
-        })
-      });
-
-      const data = await res.json().catch(e => this.log("JSON ERROR: " + e));
-
-      this.log("Save response: " + JSON.stringify(data));
-
-      if (data.success) {
-        tg.showAlert("Balance Saved!");
-        tg.HapticFeedback.notificationOccurred("success");
-      } else {
-        tg.showAlert("Save failed.");
-      }
-    }
-  },
-
-  mounted() {
-    const q = new URL(window.location.href).searchParams;
-    this.syncUrl = q.get("sync");
-    this.botName = q.get("botName") || "Balance App";
-
-    this.log("Sync URL = " + this.syncUrl);
-
-    if (!this.syncUrl)
-      return this.log("❌ No sync URL found!");
-
-    this.load();
-  }
-};
-
-Vue.createApp(App).mount("#app");
-</script>
-
+    }).mount('#app');
+  })();
+  </script>
 </body>
-</html>
+  </html>
