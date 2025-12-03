@@ -42,9 +42,9 @@ function loadUser(){
   log("Sending {action: 'load'}");
 
   fetch(sync, {
-    method:"POST",
-    headers:{ "Content-Type": "application/json" },
-    body: JSON.stringify({ action:"load" })
+  method:"POST",
+  headers:{ "Content-Type":"application/json" },
+  body: JSON.stringify({ action:"load" })   // <-- correct
   })
   .then(r => r.json())
   .then(d => {
