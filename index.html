@@ -1,220 +1,108 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Balance WebApp Demo</title>
+<meta charset="UTF-8">
+<title>BB GET Test WebApp</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <!-- Telegram WebApp -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-  <!-- Vue 3 -->
-  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.min.js"></script>
-
-  <style>
-    :root {
-      --bg: #f6f7fb;
-      --card: #ffffff;
-      --text: #111827;
-      --muted: #6b7280;
-      --accent: #2563eb;
-    }
-    html,body { height:100%; margin:0; background:var(--bg); font-family:Inter,system-ui,Segoe UI,Roboto,Arial; color:var(--text) }
-    .wrap { max-width:720px; margin:24px auto; padding:16px; }
-    .card { background:var(--card); border-radius:12px; padding:18px; box-shadow:0 8px 30px rgba(0,0,0,0.06); }
-    h1 { margin:0 0 8px; font-size:20px; }
-    p.muted { color:var(--muted); margin:0 0 12px; }
-    .balance { font-size:48px; font-weight:700; color:var(--accent); margin:8px 0 16px; }
-    .controls { display:flex; gap:8px; flex-wrap:wrap; }
-    button { border:0; padding:10px 14px; border-radius:10px; cursor:pointer; color:#fff; font-weight:600; }
-    .btn-accent { background:var(--accent); }
-    .btn-danger { background:#ef4444; }
-    .btn-ghost { background:transparent; color:var(--accent); border:1px solid #e5e7eb; }
-    .log { margin-top:14px; font-family:monospace; background:#0f172a; color:#fff; padding:12px; border-radius:8px; max-height:220px; overflow:auto; font-size:13px; }
-    .row { display:flex; gap:8px; align-items:center; }
-    .small { font-size:13px; color:var(--muted) }
-  </style>
+<style>
+body { font-family: Arial; padding:20px; background:#f0f0f0; }
+.btn { padding:10px 20px; background:#007bff; color:white; border:none; margin:10px; border-radius:6px; }
+textarea { width:100%; height:180px; margin-top:15px; padding:10px; }
+</style>
 </head>
+
 <body>
-  <div id="app" class="wrap">
-    <div class="card">
-      <div class="row" style="justify-content:space-between; align-items:center;">
-        <div>
-          <h1 id="title">Balance WebApp</h1>
-          <div class="small" id="sub">Demo 2-way sync with Bots.Business webhooks</div>
-        </div>
-        <div>
-          <button class="btn-ghost" @click="debugCopySync">Copy sync URL</button>
-        </div>
-      </div>
+<h2>🔵 BB WebApp GET Debugger</h2>
 
-      <p class="muted">Hello, <strong>{{ userName }}</strong></p>
+<p id="userInfo">Loading...</p>
+<p><b>Balance:</b> <span id="bal">?</span></p>
 
-      <div class="balance">{{ balance }}</div>
+<button class="btn" onclick="loadData()">Load Balance (GET)</button>
+<button class="btn" onclick="save()">Save +5 (POST)</button>
 
-      <div class="controls">
-        <button class="btn-danger" @click="change(-10)">-10</button>
-        <button class="btn-danger" @click="change(-5)">-5</button>
-        <button class="btn-accent" @click="change(5)">+5</button>
-        <button class="btn-accent" @click="change(10)">+10</button>
-        <button style="margin-left:auto" class="btn-accent" @click="save" :disabled="saving">
-          {{ saving ? 'Saving...' : 'Save' }}
-        </button>
-      </div>
+<h3>Debug Log:</h3>
+<textarea id="log"></textarea>
 
-      <div style="margin-top:12px" class="small">
-        <strong>Sync URL:</strong> <span style="word-break:break-all">{{ sync }}</span>
-      </div>
+<script>
 
-      <div class="log" id="log">
-        <div v-for="(l,i) in logs" :key="i">{{ l }}</div>
-      </div>
-    </div>
-  </div>
+const tg = Telegram.WebApp;
+tg.ready();
 
-  <script>
-    const tg = window.Telegram?.WebApp;
-    try { tg?.ready(); tg?.expand?.(); } catch(e){ /* ignore */ }
+let params = new URLSearchParams(location.search);
 
-    const app = Vue.createApp({
-      data() {
-        return {
-          sync: "",         // webhook URL (from ?sync=)
-          botName: "",
-          balance: 0,
-          userName: "User",
-          saving: false,
-          logs: []
-        }
-      },
-      created() {
-        // read query params
-        const p = new URLSearchParams(window.location.search);
-        this.sync = p.get('sync') || p.get('syncUrl') || "";
-        this.botName = p.get('botName') || document.title || "WebApp";
-        document.getElementById('title').textContent = this.botName + " — Balance";
+let sync = params.get("sync");
+let botName = params.get("botName");
+let userId = params.get("userId");
 
-        this.log("CLEAN URL: " + window.location.href);
-        this.log("SYNC URL = " + this.sync);
+log("SYNC URL: " + sync);
+log("userId: " + userId);
+log("botName: " + botName);
 
-        if (!this.sync) {
-          this.log("❌ No sync URL provided in query string. Provide ?sync=<url>");
-          return;
-        }
+// Load user from GET
+async function loadData(){
+  log("\n--- SENDING GET REQUEST ---\n" + sync);
 
-        // load user via POST (action: load)
-        this.load();
-      },
-      methods: {
-        log(...args) {
-          const s = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
-          this.logs.unshift(new Date().toLocaleTimeString() + "  " + s);
-          if (this.logs.length > 200) this.logs.length = 200;
-          // also console.log
-          console.log(...args);
-        },
+  try {
+    let res = await fetch(sync, { method: "GET" });
 
-        async fetchJson(postBody) {
-          // centralized fetch with debug logs; always POST
-          try {
-            this.log("→ POST to webhook:", postBody);
-            const res = await fetch(this.sync, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(postBody)
-            });
+    let txt = await res.text();   // read raw text first
+    log("RAW RESPONSE:\n" + txt.substring(0,500));
 
-            // read text first for debug (some servers return HTML on error)
-            const text = await res.text();
-            this.log("← HTTP", res.status, "content-type:", res.headers.get('content-type'));
-            this.log("← RAW:", text.slice(0, 800));
+    try {
+      let json = JSON.parse(txt);
+      log("PARSED JSON: " + JSON.stringify(json));
 
-            // try parse JSON
-            try {
-              const json = JSON.parse(text);
-              this.log("← JSON:", json);
-              return { ok: true, res, json };
-            } catch (err) {
-              this.log("⚠️ Server did not return JSON:", err.message);
-              return { ok: false, res, text };
-            }
+      document.getElementById("bal").innerHTML = json.user.balance;
+      document.getElementById("userInfo").innerHTML = "Hi, " + json.user.username;
 
-          } catch (err) {
-            this.log("🚫 Fetch error:", err.message);
-            return { ok: false, error: err };
-          }
-        },
+    } catch (e) {
+      log("❌ JSON parse error: " + e);
+    }
 
-        async load() {
-          this.log("Loading user (POST { action: 'load' })...");
-          const r = await this.fetchJson({ action: "load" });
+  } catch (err) {
+    log("❌ GET fetch error: " + err);
+  }
+}
 
-          if (!r.ok) {
-            this.log("❌ Load failed:", r.error || r.text || r.res?.status);
-            return;
-          }
 
-          const data = r.json;
-          if (data && (data.ok === true || data.success === true)) {
-            // data may be { ok: true, user: {...} } or success:true
-            const user = data.user || data.user || {};
-            this.balance = parseInt(user.balance || 0, 10);
-            this.userName = user.username || user.first_name || "Player";
-            this.log("Loaded user:", user);
-            // gentle haptic if available
-            try { tg?.HapticFeedback?.impactOccurred("light"); } catch(e){}
-            return;
-          }
 
-          this.log("❌ Unexpected load response:", data);
-        },
+// POST save
+async function save(){
 
-        change(delta) {
-          this.balance = parseInt(this.balance || 0, 10) + delta;
-          this.log("Balance changed to", this.balance);
-          try { tg?.HapticFeedback?.impactOccurred("selection"); } catch(e){}
-        },
+  let newBal = (parseInt(document.getElementById("bal").innerHTML) || 0) + 5;
 
-        async save() {
-          if (!this.sync) {
-            this.log("❌ Missing sync URL");
-            return;
-          }
-          this.saving = true;
-          this.log("Saving balance to webhook (POST):", this.balance);
+  log("\n--- SENDING POST --- " + newBal);
 
-          const r = await this.fetchJson({ balance: this.balance });
-
-          if (!r.ok) {
-            this.log("❌ Save failed:", r.error || r.text || r.res?.status);
-            this.saving = false;
-            return;
-          }
-
-          const json = r.json;
-          if (json && (json.ok === true || json.success === true)) {
-            this.log("✅ Save response:", json);
-            try { tg?.HapticFeedback?.notificationOccurred("success"); } catch(e){}
-            try { tg?.showAlert("Saved!"); } catch(e){}
-          } else {
-            this.log("❌ Unexpected save response:", json);
-            try { tg?.HapticFeedback?.notificationOccurred("error"); } catch(e){}
-          }
-
-          this.saving = false;
-        },
-
-        debugCopySync() {
-          if (!this.sync) return;
-          navigator.clipboard?.writeText(this.sync).then(()=> {
-            this.log("Sync URL copied to clipboard.");
-            try { tg?.showAlert("Sync URL copied"); } catch(e){}
-          }).catch(()=> this.log("Failed to copy sync URL."));
-        }
-      }
+  try {
+    let res = await fetch(sync, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ balance: newBal })
     });
 
-    app.mount('#app');
-  </script>
+    let txt = await res.text();
+    log("RAW POST RESPONSE:\n" + txt.substring(0,500));
+
+    try {
+      let json = JSON.parse(txt);
+      document.getElementById("bal").innerHTML = newBal;
+    } catch(e){
+      log("❌ JSON parse error after POST");
+    }
+
+  } catch(err){
+    log("❌ POST error: " + err);
+  }
+}
+
+
+function log(msg){
+  let logBox = document.getElementById("log");
+  logBox.value += msg + "\n";
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+</script>
 </body>
-  </html>
+</html>
