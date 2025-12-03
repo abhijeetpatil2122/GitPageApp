@@ -1,135 +1,297 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Balance WebApp (Demo)</title>
+  <title>Balance WebApp — Demo</title>
+
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
   <style>
-    body{font-family:system-ui,Arial;margin:18px;color:#111}
-    .row{margin:10px 0}
-    .btn{padding:10px 14px;border-radius:8px;border:0;cursor:pointer}
-    .btn-primary{background:#2b74ff;color:#fff}
-    .btn-ghost{background:#eee}
-    .log{background:#0b0b0b;color:#0f0;padding:10px;height:160px;overflow:auto;font-family:monospace;font-size:12px}
-    .status{margin-top:8px}
+    :root {
+      --accent: #3b82f6;
+      --bg: #f7f8fb;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+    }
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}
+    .wrap{max-width:720px;margin:20px auto;padding:16px}
+    .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(11,15,30,0.06)}
+    h1{margin:0 0 8px;font-size:20px}
+    .muted{color:var(--muted);font-size:13px;margin-bottom:12px}
+    .row{display:flex;gap:8px;align-items:center;margin:10px 0}
+    .big{font-size:42px;font-weight:700;color:var(--accent)}
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{padding:10px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:600}
+    .btn-light{background:#eef2ff;color:#1f2937}
+    .btn-primary{background:var(--accent);color:white}
+    .status{margin-top:8px;font-size:13px}
+    #log{background:#0b1220;color:#8df7b6;padding:10px;height:160px;overflow:auto;border-radius:8px;font-family:monospace;font-size:12px}
+    .small{font-size:12px;color:var(--muted)}
+    .footer{margin-top:12px;font-size:12px;color:var(--muted)}
+    .input-inline {display:flex;gap:8px;align-items:center}
+    .badge {background:#e6eefc;padding:6px 8px;border-radius:8px;color:#0b3c78;font-weight:600}
+    .loading {opacity:0.6;pointer-events:none}
   </style>
 </head>
 <body>
-  <h2 id="title">Balance Demo WebApp</h2>
-  <div class="row">Hello: <strong id="who">...</strong></div>
-  <div class="row">Balance: <strong id="bal">0</strong></div>
+  <div class="wrap">
+    <div class="card" id="appCard">
+      <h1>Balance Demo WebApp</h1>
+      <div class="muted">This demo saves your balance through a per-user webhook (Bots.Business).</div>
 
-  <div class="row">
-    <button class="btn btn-ghost" onclick="change(-5)">-5</button>
-    <button class="btn btn-ghost" onclick="change(5)">+5</button>
-    <button class="btn btn-ghost" onclick="change(10)">+10</button>
+      <div class="row">
+        <div style="flex:1">
+          <div class="small">User</div>
+          <div id="who" style="font-weight:700">—</div>
+        </div>
+
+        <div style="width:160px;text-align:right">
+          <div class="small">Balance</div>
+          <div id="bal" class="big">0</div>
+        </div>
+      </div>
+
+      <div class="row controls">
+        <button class="btn btn-light" onclick="change(-10)">-10</button>
+        <button class="btn btn-light" onclick="change(-5)">-5</button>
+        <button class="btn btn-light" onclick="change(5)">+5</button>
+        <button class="btn btn-light" onclick="change(10)">+10</button>
+        <div style="flex:1"></div>
+        <button id="saveBtn" class="btn btn-primary" onclick="save()">Save</button>
+      </div>
+
+      <div class="status" id="status">Status: <span id="statusText">initializing…</span></div>
+
+      <h4 style="margin-top:14px">Debug log</h4>
+      <div id="log"></div>
+
+      <div class="footer">If webhook returns HTML, copy the HTML snippet here and show me — I'll help diagnose.</div>
+    </div>
   </div>
-
-  <div class="row">
-    <button class="btn btn-primary" onclick="save()">Save to Bot</button>
-  </div>
-
-  <div class="row status" id="status"></div>
-
-  <h4>Debug log</h4>
-  <div id="log" class="log"></div>
 
 <script>
-  // helper logging
-  function log(...args){
-    const el = document.getElementById('log');
-    el.innerHTML += args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ') + '\n';
-    el.scrollTop = el.scrollHeight;
-    console.log(...args);
+/* ====================
+   Utilities & setup
+   ==================== */
+const el = id => document.getElementById(id);
+const logEl = el('log');
+function log(...args){
+  const s = args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
+  logEl.innerText += s + '\n';
+  logEl.scrollTop = logEl.scrollHeight;
+  console.log(...args);
+}
+function setStatus(text, ok){
+  el('statusText').innerText = text;
+  el('statusText').style.color = ok === false ? 'red' : (ok === true ? 'green' : '#666');
+}
+
+/* Telegram WebApp ready */
+const tg = window.Telegram?.WebApp;
+try{ tg?.ready(); }catch(e){}
+try{ if (tg) tg.expand(); } catch(e){}
+
+/* ====================
+   Extract sync url (robust)
+   ==================== */
+// Telegram appends a fragment (#tgWebAppData=...) after the query string.
+// Remove the fragment portion before reading search params.
+const hrefNoHash = location.href.split('#')[0];
+log('CLEAN URL:', hrefNoHash);
+
+// Accept either `sync` or `syncUrl` param names (some people use different names)
+const qs = new URL(hrefNoHash).searchParams;
+let syncParam = qs.get('sync') || qs.get('syncUrl') || qs.get('syncUserDataUrl') || '';
+if (!syncParam) {
+  log('ERROR: no sync param found in query string. Please open the WebApp from bot start button.');
+  setStatus('Missing sync parameter in URL. Open via bot.', false);
+  throw new Error('Missing sync parameter');
+}
+// decode in case bot encoded it twice
+const SYNC_URL = decodeURIComponent(syncParam);
+log('SYNC URL =', SYNC_URL);
+
+/* ====================
+   App state
+   ==================== */
+let balance = 0;
+let busy = false;
+const saveBtn = el('saveBtn');
+
+function setBusy(v){
+  busy = !!v;
+  if (busy) {
+    el('appCard').classList.add('loading');
+    saveBtn.disabled = true;
+  } else {
+    el('appCard').classList.remove('loading');
+    saveBtn.disabled = false;
   }
+}
 
-  // Telegram WebApp init
-  const tg = window.Telegram?.WebApp;
-  try { tg?.ready(); } catch(e){ /* ignore */ }
+/* ====================
+   Load logic (GET then fallback to POST)
+   ==================== */
+async function loadUser() {
+  setBusy(true);
+  setStatus('Loading user...');
+  log('Loading user (GET):', SYNC_URL);
 
-  // IMPORTANT: Telegram will append a hash (#tgWebAppData=...) after the query string.
-  // Remove the hash before reading searchParams.
-  const hrefClean = location.href.split('#')[0];
-  const syncParam = new URL(hrefClean).searchParams.get('sync') || '';
+  try {
+    // Try GET first
+    const r = await fetch(SYNC_URL, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-store',
+      mode: 'cors',
+      redirect: 'follow'
+    });
 
-  log('CLEAN URL:', hrefClean);
-  log('sync param (raw):', syncParam);
+    log('HTTP', r.status, r.statusText, 'content-type:', r.headers.get('content-type'));
 
-  if (!syncParam) {
-    log('ERROR: sync parameter not provided in URL.');
-    document.getElementById('status').textContent = 'Error: sync param missing. Open via bot Start button.';
-    document.getElementById('status').style.color = 'red';
-    throw new Error('sync param missing');
-  }
-
-  // store sync url
-  const SYNC_URL = decodeURIComponent(syncParam);
-
-  // application state
-  let balance = 0;
-
-  async function load() {
-    log('Loading user data from webhook (GET)...');
-    try {
-      const r = await fetch(SYNC_URL, { method: 'GET', headers: { 'Content-Type':'application/json' } });
+    // If response is JSON, parse; otherwise grab text (for debugging)
+    const ct = (r.headers.get('content-type') || '').toLowerCase();
+    if (ct.includes('application/json')) {
       const j = await r.json();
-      log('Load response:', j);
-      if (j && j.ok && j.user) {
-        document.getElementById('who').textContent = j.user.first_name || j.user.username || ('ID:' + (j.user.id||'?'));
-        balance = parseInt(j.user.balance || 0, 10);
-        document.getElementById('bal').textContent = balance;
-        document.getElementById('status').textContent = 'Loaded';
-        document.getElementById('status').style.color = 'green';
-        tg?.HapticFeedback?.impactOccurred('light');
-      } else {
-        log('Load error (not ok):', j);
-        document.getElementById('status').textContent = 'Load failed: ' + (j && j.error ? j.error : 'unknown');
-        document.getElementById('status').style.color = 'red';
-      }
-    } catch (err) {
-      log('Load exception:', err);
-      document.getElementById('status').textContent = 'Connection error';
-      document.getElementById('status').style.color = 'red';
-    }
-  }
-
-  function change(delta){
-    balance = (parseInt(balance||0,10) || 0) + delta;
-    document.getElementById('bal').textContent = balance;
-    log('balance changed ->', balance);
-  }
-
-  async function save(){
-    log('Saving balance via POST to webhook:', balance);
-    document.getElementById('status').textContent = 'Saving...';
-    try {
-      const r = await fetch(SYNC_URL, {
+      handleLoadResponse(j);
+      setBusy(false);
+      return;
+    } else {
+      // If server returned HTML, try fallback POST load (some endpoints behave differently)
+      const txt = await r.text();
+      log('GET returned non-JSON body (first 1000 chars):', txt.slice(0,1000));
+      // fallback POST attempt
+      log('Attempting fallback load via POST { action: "load" }');
+      const r2 = await fetch(SYNC_URL, {
         method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify({ balance: balance })
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ action: 'load' }),
+        cache: 'no-store',
+        mode: 'cors',
+        redirect: 'follow'
       });
-      const j = await r.json();
-      log('Save response:', j);
-      if (j && j.ok) {
-        document.getElementById('status').textContent = 'Saved ✓';
-        document.getElementById('status').style.color = 'green';
-        tg?.HapticFeedback?.notificationOccurred('success');
+      log('Fallback POST status:', r2.status, 'ct:', r2.headers.get('content-type'));
+      const ct2 = (r2.headers.get('content-type') || '').toLowerCase();
+      if (ct2.includes('application/json')) {
+        const j2 = await r2.json();
+        handleLoadResponse(j2);
+        setBusy(false);
+        return;
       } else {
-        document.getElementById('status').textContent = 'Save failed: ' + (j && j.error ? j.error : 'unknown');
-        document.getElementById('status').style.color = 'red';
-        tg?.HapticFeedback?.notificationOccurred('error');
+        const t2 = await r2.text();
+        log('Fallback POST also returned non-JSON (first 1000):', t2.slice(0,1000));
+        setStatus('Load failed: server returned HTML. See logs.', false);
+        setBusy(false);
+        return;
       }
-    } catch (err) {
-      log('Save exception:', err);
-      document.getElementById('status').textContent = 'Connection error';
-      document.getElementById('status').style.color = 'red';
-      tg?.HapticFeedback?.notificationOccurred('error');
+    }
+  } catch (err) {
+    log('Load exception:', String(err));
+    // network error: try one quick retry (best-effort)
+    try {
+      log('Retrying GET once after error...');
+      const r = await fetch(SYNC_URL, { method: 'GET', headers: { 'Accept': 'application/json' }, cache: 'no-store', mode: 'cors' });
+      const ct = (r.headers.get('content-type')||'').toLowerCase();
+      if (ct.includes('application/json')) {
+        const j = await r.json();
+        handleLoadResponse(j);
+        setBusy(false);
+        return;
+      } else {
+        const t = await r.text();
+        log('Retry returned non-JSON:', t.slice(0,1000));
+        setStatus('Load failed after retry. See logs.', false);
+        setBusy(false);
+        return;
+      }
+    } catch (err2) {
+      log('Retry exception:', String(err2));
+      setStatus('Load error: network or CORS', false);
+      setBusy(false);
+      return;
     }
   }
+}
 
-  // start
-  load();
+/* ====================
+   Handle JSON response from load
+   ==================== */
+function handleLoadResponse(j) {
+  log('Load response JSON:', j);
+  if (j && (j.ok === true || j.success === true)) {
+    // support both ok:true and success:true shapes
+    const user = j.user || j.data?.user || j.data || {};
+    const name = user.first_name || user.username || ('ID:' + (user.id || '?'));
+    el('who').innerText = name;
+    balance = parseInt(user.balance || 0, 10);
+    el('bal').innerText = balance;
+    setStatus('Loaded', true);
+    try{ tg?.HapticFeedback?.impactOccurred('light'); }catch(e){}
+  } else {
+    // server returned JSON but with errors
+    log('Server JSON indicates failure:', j);
+    setStatus('Load failed: ' + (j.error || (j.errors && j.errors[0]) || 'unknown'), false);
+  }
+}
+
+/* ====================
+   Change / Save
+   ==================== */
+function change(delta){
+  balance = (parseInt(balance||0,10) || 0) + delta;
+  el('bal').innerText = balance;
+  log('Balance changed to', balance);
+}
+
+async function save(){
+  if (busy) return;
+  setBusy(true);
+  setStatus('Saving...');
+  log('Saving balance to webhook (POST):', balance);
+
+  try {
+    const r = await fetch(SYNC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ balance: balance }),
+      cache: 'no-store',
+      mode: 'cors',
+      redirect: 'follow'
+    });
+
+    log('Save HTTP', r.status, r.statusText, 'ct:', r.headers.get('content-type'));
+
+    const ct = (r.headers.get('content-type') || '').toLowerCase();
+    if (ct.includes('application/json')) {
+      const j = await r.json();
+      log('Save JSON:', j);
+      if (j && (j.ok === true || j.success === true)) {
+        setStatus('Saved ✓', true);
+        try{ tg?.HapticFeedback?.notificationOccurred('success'); }catch(e){}
+      } else {
+        setStatus('Save failed: ' + (j.error || 'unknown'), false);
+        try{ tg?.HapticFeedback?.notificationOccurred('error'); }catch(e){}
+      }
+    } else {
+      // not JSON — show HTML snippet for debugging
+      const txt = await r.text();
+      log('Save returned non-JSON (first 2000 chars):', txt.slice(0,2000));
+      setStatus('Save returned HTML (see debug log)', false);
+      try{ tg?.HapticFeedback?.notificationOccurred('error'); }catch(e){}
+    }
+  } catch (err) {
+    log('Save exception:', String(err));
+    setStatus('Save error: network or CORS', false);
+  } finally {
+    setBusy(false);
+  }
+}
+
+/* Start loading on open */
+loadUser();
+
 </script>
 </body>
-</html>
+  </html>
