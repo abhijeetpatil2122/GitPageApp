@@ -3,629 +3,828 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-  <title>Balance WebApp</title>
-
+  <title>WebHook Tester</title>
+  
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.min.js"></script>
-
   <style>
     :root {
-      --bg: #f6f7fb;
-      --card: #ffffff;
-      --accent: #2a8bf2;
-      --muted: #6b7280;
-      --error: #ef4444;
+      --primary: #6366f1;
       --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --dark: #1f2937;
+      --light: #f9fafb;
     }
+    
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    html, body { 
-      height: 100%; 
-      margin: 0; 
-      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif; 
-      background: var(--bg); 
-      color: #0f172a; 
-    }
-    .wrap { 
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
+      padding: 20px;
+      color: var(--dark);
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      color: white;
+    }
+    
+    .header h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .header p {
+      opacity: 0.9;
+      font-size: 16px;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--dark);
       display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 20px;
+      gap: 8px;
     }
-    .card { 
-      background: var(--card); 
-      border-radius: 16px; 
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); 
-      padding: 24px; 
-      width: 100%;
-      max-width: 400px;
+    
+    .section-title svg {
+      width: 20px;
+      height: 20px;
     }
-    h1 { 
-      margin: 0 0 12px; 
-      font-size: 24px; 
-      font-weight: 700;
-      color: #1e293b;
-    }
-    .meta { 
-      color: var(--muted); 
-      font-size: 14px; 
-      margin-bottom: 20px; 
-      line-height: 1.5;
-    }
-    .balance-container {
-      text-align: center;
-      margin: 24px 0;
-      padding: 20px;
-      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-      border-radius: 12px;
-      border: 1px solid #e2e8f0;
-    }
-    .balance-label {
-      font-size: 14px;
-      color: var(--muted);
-      margin-bottom: 8px;
-      font-weight: 500;
-    }
-    .balance { 
-      font-size: 48px; 
-      font-weight: 700; 
-      color: var(--accent); 
-      line-height: 1;
-    }
-    .balance-currency {
-      font-size: 20px;
-      color: var(--muted);
-      margin-left: 4px;
-    }
-    .btns { 
+    
+    .btn-group {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px; 
-      margin: 24px 0;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
     }
-    button { 
-      cursor: pointer; 
-      border: 0; 
-      padding: 14px 16px; 
-      border-radius: 10px; 
-      color: white; 
-      font-weight: 600;
+    
+    @media (max-width: 480px) {
+      .btn-group {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    button {
+      padding: 14px 16px;
+      border: none;
+      border-radius: 12px;
       font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
       transition: all 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
     }
+    
     button:active {
       transform: scale(0.98);
     }
+    
     button:disabled {
       opacity: 0.6;
       cursor: not-allowed;
       transform: none !important;
     }
-    .btn-danger { 
-      background: var(--error);
+    
+    .btn-primary {
+      background: var(--primary);
+      color: white;
     }
-    .btn-danger:hover {
-      background: #dc2626;
-    }
-    .btn-success { 
+    
+    .btn-success {
       background: var(--success);
+      color: white;
     }
-    .btn-success:hover {
-      background: #059669;
+    
+    .btn-warning {
+      background: var(--warning);
+      color: white;
     }
-    .btn-primary { 
-      background: var(--accent);
-      width: 100%;
-      padding: 16px;
-      font-size: 16px;
-      margin-top: 8px;
+    
+    .btn-danger {
+      background: var(--danger);
+      color: white;
     }
-    .btn-primary:hover {
-      background: #1d4ed8;
+    
+    .btn-dark {
+      background: var(--dark);
+      color: white;
     }
-    .log { 
-      margin-top: 20px; 
-      font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace; 
-      font-size: 12px; 
-      color: #334155; 
-      background: #f8fafc; 
-      padding: 16px; 
-      border-radius: 8px; 
-      max-height: 200px; 
-      overflow: auto; 
-      border: 1px solid #e2e8f0; 
-      line-height: 1.5;
-    }
-    .log-title {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--muted);
-      margin-bottom: 8px;
+    
+    .status {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      font-weight: 500;
     }
+    
+    .status.connected {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+    
+    .status.disconnected {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+    
+    .status.pending {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+    }
+    
+    .log-container {
+      background: var(--light);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #e5e7eb;
+    }
+    
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .log-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #6b7280;
+    }
+    
     .log-clear {
       background: none;
       border: none;
-      color: var(--muted);
-      font-size: 11px;
+      color: #6b7280;
+      font-size: 12px;
       cursor: pointer;
-      padding: 2px 6px;
+      padding: 4px 8px;
       border-radius: 4px;
     }
+    
     .log-clear:hover {
-      background: #e2e8f0;
+      background: #e5e7eb;
     }
-    .log-item {
-      margin-bottom: 4px;
+    
+    .log-entry {
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 12px;
+      padding: 8px;
+      margin-bottom: 6px;
+      border-radius: 6px;
+      background: white;
+      border-left: 4px solid var(--primary);
       word-break: break-all;
     }
-    .log-item:last-child {
+    
+    .log-entry.get {
+      border-left-color: var(--success);
+    }
+    
+    .log-entry.post {
+      border-left-color: var(--warning);
+    }
+    
+    .log-entry.error {
+      border-left-color: var(--danger);
+    }
+    
+    .data-display {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+      border: 1px dashed #cbd5e1;
+    }
+    
+    .data-item {
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .data-item:last-child {
       margin-bottom: 0;
+      border-bottom: none;
     }
-    .small { 
-      font-size: 13px; 
-      color: var(--muted); 
-      margin-bottom: 4px;
+    
+    .data-label {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 500;
+      margin-bottom: 2px;
     }
-    .error { 
-      color: var(--error);
-      background: #fef2f2;
-      padding: 12px;
-      border-radius: 8px;
-      margin-top: 16px;
+    
+    .data-value {
       font-size: 14px;
-      border-left: 4px solid var(--error);
+      color: var(--dark);
+      font-weight: 600;
     }
-    .success { 
-      color: var(--success);
-      background: #f0fdf4;
-      padding: 12px;
-      border-radius: 8px;
-      margin-top: 16px;
+    
+    .input-group {
+      margin-bottom: 16px;
+    }
+    
+    label {
+      display: block;
       font-size: 14px;
-      border-left: 4px solid var(--success);
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #4b5563;
     }
+    
+    input, textarea, select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: border-color 0.2s;
+    }
+    
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+      font-family: inherit;
+    }
+    
     .loading {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      padding: 40px;
-      color: var(--muted);
+      gap: 8px;
     }
-    .loading-spinner {
-      width: 20px;
-      height: 20px;
-      border: 2px solid #e2e8f0;
-      border-top-color: var(--accent);
+    
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #e5e7eb;
+      border-top-color: var(--primary);
       border-radius: 50%;
       animation: spin 1s linear infinite;
-      margin-right: 12px;
     }
+    
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-    .user-info {
+    
+    .notification {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: white;
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 16px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid #e2e8f0;
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1000;
     }
-    .user-avatar {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: var(--accent);
+    
+    .notification.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    
+    .notification.success {
+      border-left: 4px solid var(--success);
+    }
+    
+    .notification.error {
+      border-left: 4px solid var(--danger);
+    }
+    
+    .notification.warning {
+      border-left: 4px solid var(--warning);
+    }
+    
+    .notification-icon {
+      width: 24px;
+      height: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
-      font-weight: 600;
-      font-size: 18px;
-    }
-    .user-details {
-      flex: 1;
-    }
-    .user-name {
-      font-weight: 600;
-      color: #1e293b;
-      margin-bottom: 2px;
-    }
-    .user-id {
-      font-size: 12px;
-      color: var(--muted);
-    }
-    .sync-info {
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 12px;
-      text-align: center;
-      word-break: break-all;
-      padding: 8px;
-      background: #f8fafc;
-      border-radius: 6px;
-      border: 1px dashed #e2e8f0;
-    }
-    .sync-status {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 500;
-    }
-    .sync-status.connected {
-      background: #dcfce7;
-      color: #166534;
-    }
-    .sync-status.disconnected {
-      background: #fee2e2;
-      color: #991b1b;
     }
   </style>
 </head>
 <body>
-  <div id="app" class="wrap">
+  <div class="container">
+    <div class="header">
+      <h1>🔗 WebHook Tester</h1>
+      <p>Test GET & POST requests between WebApp and Bot</p>
+    </div>
+    
     <div class="card">
-      <h1>{{ botName }} — Balance Demo</h1>
-      <div class="meta">Secure per-user sync via webhook (POST-only).</div>
-
-      <div v-if="loading" class="loading">
-        <div class="loading-spinner"></div>
-        <span>Loading user data...</span>
+      <div class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+        </svg>
+        <span>Connection Status</span>
       </div>
-
-      <div v-else-if="error" class="error">
-        {{ error }}
-        <div style="margin-top: 8px;">
-          <button class="btn-primary" @click="retryLoad" style="background: var(--error);">
-            Retry
-          </button>
-        </div>
+      
+      <div class="status" id="status">
+        <div class="spinner"></div>
+        <span>Checking connection...</span>
       </div>
-
-      <div v-else>
-        <div class="user-info">
-          <div class="user-avatar">
-            {{ user.first_name ? user.first_name[0] : 'U' }}
-          </div>
-          <div class="user-details">
-            <div class="user-name">{{ user.first_name || user.username || 'User' }}</div>
-            <div class="user-id">ID: {{ user.id }}</div>
-          </div>
+      
+      <div class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+        </svg>
+        <span>GET Request (Load Data)</span>
+      </div>
+      
+      <div class="btn-group">
+        <button class="btn-success" onclick="testGet('simple')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          Simple GET
+        </button>
+        
+        <button class="btn-primary" onclick="testGet('full')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          Load User Data
+        </button>
+      </div>
+      
+      <div id="dataDisplay" class="data-display" style="display: none;">
+        <!-- Data will be displayed here -->
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
+        </svg>
+        <span>POST Request (Send Data)</span>
+      </div>
+      
+      <div class="input-group">
+        <label for="balanceInput">Update Balance</label>
+        <input type="number" id="balanceInput" placeholder="Enter new balance" value="100">
+      </div>
+      
+      <div class="btn-group">
+        <button class="btn-warning" onclick="testPost('update_balance')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+          Update Balance
+        </button>
+        
+        <button class="btn-dark" onclick="testPost('get_data')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 0 1 9-9"/>
+          </svg>
+          Request Data
+        </button>
+      </div>
+      
+      <div class="input-group" style="margin-top: 20px;">
+        <label for="messageInput">Send Message to Bot</label>
+        <textarea id="messageInput" placeholder="Type your message...">Hello from WebApp! This is a test message.</textarea>
+      </div>
+      
+      <button class="btn-primary" onclick="testPost('send_message')" style="width: 100%; margin-top: 10px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 2L11 13"/>
+          <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
+        </svg>
+        Send Message to Bot
+      </button>
+    </div>
+    
+    <div class="card">
+      <div class="log-header">
+        <div class="log-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          Activity Log
         </div>
-
-        <div class="balance-container">
-          <div class="balance-label">Current Balance</div>
-          <div class="balance">
-            {{ user.balance }}
-            <span class="balance-currency">💎</span>
-          </div>
-        </div>
-
-        <div class="btns">
-          <button class="btn-danger" @click="change(-10)" :disabled="user.balance < 10">
-            <span>-10</span>
-          </button>
-          <button class="btn-danger" @click="change(-5)" :disabled="user.balance < 5">
-            <span>-5</span>
-          </button>
-          <button class="btn-success" @click="change(5)">
-            <span>+5</span>
-          </button>
-          <button class="btn-success" @click="change(10)">
-            <span>+10</span>
-          </button>
-        </div>
-
-        <div>
-          <button class="btn-primary" @click="save" :disabled="saving || !hasChanges">
-            <span v-if="saving">Saving...</span>
-            <span v-else>Save Balance {{ hasChanges ? '*' : '' }}</span>
-          </button>
-        </div>
-
-        <div class="sync-info">
-          <span class="sync-status" :class="syncConnected ? 'connected' : 'disconnected'">
-            <span>{{ syncConnected ? '✓ Connected' : '✗ Disconnected' }}</span>
-          </span>
-          <div style="margin-top: 4px; font-size: 10px;">Sync URL loaded: {{ syncUrl ? 'Yes' : 'No' }}</div>
-        </div>
-
-        <div v-if="successMessage" class="success">
-          {{ successMessage }}
-        </div>
-
-        <div class="log" v-if="logs.length > 0">
-          <div class="log-title">
-            <span>Activity Log</span>
-            <button class="log-clear" @click="clearLogs">Clear</button>
-          </div>
-          <div v-for="(log, index) in logs" :key="index" class="log-item">
-            {{ log }}
-          </div>
-        </div>
+        <button class="log-clear" onclick="clearLogs()">Clear All</button>
+      </div>
+      
+      <div class="log-container" id="logContainer">
+        <!-- Logs will appear here -->
       </div>
     </div>
   </div>
-
+  
+  <div class="notification" id="notification">
+    <div class="notification-icon"></div>
+    <span id="notificationText"></span>
+  </div>
+  
   <script>
-  (function () {
-    const tg = window.Telegram?.WebApp || null;
-    if (tg) {
-      try { 
-        tg.ready(); 
-        tg.expand(); 
-        tg.setHeaderColor('#2a8bf2');
-        tg.setBackgroundColor('#f6f7fb');
-      } catch(e) { 
-        console.warn("Telegram WebApp init failed", e); 
+    // Global variables
+    let syncUrl = null;
+    let connectionStatus = 'pending';
+    const tg = window.Telegram?.WebApp;
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      // Get URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      syncUrl = urlParams.get('sync');
+      const botName = urlParams.get('botName') || 'WebHook Tester';
+      const userId = urlParams.get('userId');
+      
+      // Update title
+      document.title = `${botName} - WebHook Test`;
+      
+      // Initialize Telegram WebApp
+      if (tg) {
+        try {
+          tg.ready();
+          tg.expand();
+          tg.setHeaderColor('#6366f1');
+          tg.setBackgroundColor('#667eea');
+        } catch (e) {
+          console.warn('Telegram WebApp init failed:', e);
+        }
+      }
+      
+      // Test connection
+      testConnection();
+      
+      // Add initial log
+      addLog('WebApp initialized', 'info');
+      addLog(`Bot: ${botName}`, 'info');
+      addLog(`User ID: ${userId || 'Unknown'}`, 'info');
+      addLog(`Sync URL: ${syncUrl ? 'Found' : 'Missing'}`, syncUrl ? 'success' : 'error');
+    });
+    
+    // Test connection to bot
+    async function testConnection() {
+      if (!syncUrl) {
+        updateStatus('disconnected', 'Missing sync URL');
+        showNotification('❌ Please open from bot using /start', 'error');
+        return;
+      }
+      
+      updateStatus('pending', 'Testing connection...');
+      addLog('Testing connection to bot...', 'info');
+      
+      try {
+        // Simple GET request to test connection
+        const response = await fetch(syncUrl, {
+          method: 'GET'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          updateStatus('connected', 'Connected to bot');
+          addLog('✅ Connection successful!', 'success');
+          showNotification('✅ Connected to bot successfully!', 'success');
+          
+          // Display some data
+          displayData(data);
+        } else {
+          throw new Error(data.error || 'Connection failed');
+        }
+        
+      } catch (error) {
+        updateStatus('disconnected', `Connection failed: ${error.message}`);
+        addLog(`❌ Connection failed: ${error.message}`, 'error');
+        showNotification(`❌ Connection failed: ${error.message}`, 'error');
       }
     }
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const syncUrl = urlParams.get('sync') || urlParams.get('syncUrl') || null;
-    const botNameParam = urlParams.get('botName') || 'Balance Demo';
-
-    // Vue app
-    const { createApp, ref, reactive, computed, onMounted } = Vue;
-
-    createApp({
-      setup() {
-        const user = reactive({ 
-          id: null, 
-          username: null, 
-          first_name: null, 
-          balance: 0,
-          originalBalance: 0
-        });
-        const loading = ref(true);
-        const saving = ref(false);
-        const error = ref('');
-        const successMessage = ref('');
-        const logs = reactive([]);
-        const botName = ref(botNameParam);
-        const syncConnected = ref(false);
-
-        const hasChanges = computed(() => {
-          return user.balance !== user.originalBalance;
-        });
-
-        function log(msg) {
-          const t = new Date().toLocaleTimeString();
-          const logMsg = `[${t}] ${msg}`;
-          logs.unshift(logMsg);
-          if (logs.length > 50) logs.pop();
-          console.log(logMsg);
-        }
-
-        function clearLogs() {
-          logs.length = 0;
-          log("Log cleared");
-        }
-
-        function retryLoad() {
-          error.value = '';
-          successMessage.value = '';
-          load();
-        }
-
-        // POST helper with better error handling
-        async function postJson(payload) {
-          if (!syncUrl) {
-            throw new Error("Sync URL is missing. Please open from bot.");
-          }
-          
-          log(`➡️ POST ${payload.method}`);
-          const startTime = Date.now();
-          
-          try {
-            const response = await fetch(syncUrl, {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              },
-              body: JSON.stringify(payload)
-            });
-
-            const responseTime = Date.now() - startTime;
-            log(`⬅️ Response ${response.status} (${responseTime}ms)`);
-
-            if (!response.ok) {
-              const errorText = await response.text();
-              log(`❌ HTTP ${response.status}: ${errorText.substring(0, 200)}`);
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-              const text = await response.text();
-              log(`⚠️ Non-JSON response: ${text.substring(0, 200)}`);
-              throw new Error("Server returned non-JSON response");
-            }
-
-            const data = await response.json();
-            log(`✅ Success: ${JSON.stringify(data).substring(0, 200)}`);
-            return data;
-
-          } catch (err) {
-            log(`❌ Fetch error: ${err.message}`);
-            throw err;
-          }
-        }
-
-        async function load() {
-          loading.value = true;
-          error.value = '';
-          successMessage.value = '';
-          
-          try {
-            log("Loading user data...");
-            const data = await postJson({ method: 'load' });
-            
-            if (!data || !data.success) {
-              const errorMsg = data?.error || 'Invalid response from server';
-              throw new Error(errorMsg);
-            }
-
-            if (!data.user) {
-              throw new Error('No user data received');
-            }
-
-            const u = data.user;
-            user.id = u.id || null;
-            user.username = u.username || null;
-            user.first_name = u.first_name || null;
-            user.balance = parseInt(u.balance || 0, 10);
-            user.originalBalance = user.balance;
-            
-            syncConnected.value = true;
-            log(`User loaded: ${user.first_name || user.username || user.id}`);
-            log(`Balance: ${user.balance}`);
-            
-            // Haptic feedback
-            try { 
-              tg?.HapticFeedback?.notificationOccurred?.('success'); 
-            } catch(e) {}
-
-          } catch (err) {
-            console.error('Load failed:', err);
-            error.value = `Failed to load: ${err.message}`;
-            syncConnected.value = false;
-            log(`Load failed: ${err.message}`);
-            
-            try { 
-              tg?.HapticFeedback?.notificationOccurred?.('error'); 
-            } catch(e) {}
-            
-          } finally {
-            loading.value = false;
-          }
-        }
-
-        async function save() {
-          if (!hasChanges.value) {
-            successMessage.value = 'No changes to save';
-            setTimeout(() => successMessage.value = '', 2000);
-            return;
-          }
-
-          saving.value = true;
-          error.value = '';
-          successMessage.value = '';
-          
-          try {
-            log(`Saving balance: ${user.balance}`);
-            const data = await postJson({ 
-              method: 'save', 
-              balance: user.balance 
-            });
-            
-            if (!data || !data.success) {
-              const errorMsg = data?.error || 'Save failed';
-              throw new Error(errorMsg);
-            }
-
-            user.originalBalance = user.balance;
-            successMessage.value = `✅ Balance saved: ${user.balance}`;
-            log(`Balance saved successfully: ${user.balance}`);
-            
-            // Haptic feedback
-            try { 
-              tg?.HapticFeedback?.notificationOccurred?.('success'); 
-            } catch(e) {}
-            
-            // Auto-clear success message after 3 seconds
-            setTimeout(() => {
-              successMessage.value = '';
-            }, 3000);
-
-          } catch (err) {
-            console.error('Save failed:', err);
-            error.value = `Save failed: ${err.message}`;
-            log(`Save failed: ${err.message}`);
-            
-            try { 
-              tg?.HapticFeedback?.notificationOccurred?.('error'); 
-            } catch(e) {}
-            
-          } finally {
-            saving.value = false;
-          }
-        }
-
-        function change(delta) {
-          const newBalance = user.balance + delta;
-          
-          if (newBalance < 0) {
-            log(`Cannot go below 0 (attempted: ${newBalance})`);
-            try { 
-              tg?.HapticFeedback?.notificationOccurred?.('warning'); 
-            } catch(e) {}
-            return;
-          }
-
-          user.balance = newBalance;
-          log(`Balance changed: ${delta > 0 ? '+' : ''}${delta} = ${user.balance}`);
-          
-          // Haptic feedback
-          try { 
-            if (delta > 0) {
-              tg?.HapticFeedback?.impactOccurred?.('light');
-            } else {
-              tg?.HapticFeedback?.impactOccurred?.('medium');
-            }
-          } catch(e) {}
-        }
-
-        // Initialize on mount
-        onMounted(async () => {
-          log("App initialized");
-          log(`Bot: ${botName.value}`);
-          log(`Sync URL: ${syncUrl ? 'Present' : 'Missing'}`);
-          
-          if (!syncUrl) {
-            error.value = "❌ Missing sync URL. Please open this app from your Telegram bot using the /start command.";
-            loading.value = false;
-            return;
-          }
-
-          await load();
-        });
-
-        return { 
-          user, 
-          loading, 
-          saving, 
-          error, 
-          successMessage,
-          logs, 
-          botName, 
-          syncUrl,
-          syncConnected,
-          hasChanges,
-          load, 
-          save, 
-          change, 
-          retryLoad,
-          clearLogs
-        };
+    
+    // Test GET request
+    async function testGet(type) {
+      if (!syncUrl) {
+        showNotification('❌ No sync URL available', 'error');
+        return;
       }
-    }).mount('#app');
-  })();
+      
+      const button = event?.target?.closest('button');
+      if (button) button.disabled = true;
+      
+      addLog(`Starting ${type} GET request...`, 'info');
+      
+      try {
+        const response = await fetch(syncUrl, {
+          method: 'GET'
+        });
+        
+        addLog(`GET Response: HTTP ${response.status}`, 'get');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        addLog(`GET Success: ${data.message || 'Data loaded'}`, 'get');
+        
+        // Display the data
+        displayData(data);
+        
+        // Show notification
+        showNotification(`✅ ${data.message || 'GET request successful'}`, 'success');
+        
+        // Haptic feedback
+        if (tg?.HapticFeedback) {
+          tg.HapticFeedback.notificationOccurred('success');
+        }
+        
+      } catch (error) {
+        addLog(`❌ GET Failed: ${error.message}`, 'error');
+        showNotification(`❌ GET Failed: ${error.message}`, 'error');
+        
+        if (tg?.HapticFeedback) {
+          tg.HapticFeedback.notificationOccurred('error');
+        }
+        
+      } finally {
+        if (button) {
+          setTimeout(() => {
+            button.disabled = false;
+          }, 1000);
+        }
+      }
+    }
+    
+    // Test POST request
+    async function testPost(action) {
+      if (!syncUrl) {
+        showNotification('❌ No sync URL available', 'error');
+        return;
+      }
+      
+      const button = event?.target?.closest('button');
+      if (button) button.disabled = true;
+      
+      // Prepare data based on action
+      let data = {};
+      
+      switch (action) {
+        case 'update_balance':
+          const balance = document.getElementById('balanceInput').value;
+          if (!balance || isNaN(balance)) {
+            showNotification('❌ Please enter a valid balance', 'error');
+            if (button) button.disabled = false;
+            return;
+          }
+          data = { balance: parseInt(balance, 10) };
+          break;
+          
+        case 'send_message':
+          const message = document.getElementById('messageInput').value;
+          if (!message.trim()) {
+            showNotification('❌ Please enter a message', 'error');
+            if (button) button.disabled = false;
+            return;
+          }
+          data = { message: message };
+          break;
+          
+        case 'get_data':
+          data = { request: 'user_data' };
+          break;
+          
+        default:
+          data = { test: 'random_data', timestamp: Date.now() };
+      }
+      
+      addLog(`Starting POST request: ${action}`, 'info');
+      addLog(`POST Data: ${JSON.stringify(data)}`, 'post');
+      
+      try {
+        const response = await fetch(syncUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: action,
+            data: data
+          })
+        });
+        
+        addLog(`POST Response: HTTP ${response.status}`, 'post');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        addLog(`POST Success: ${result.message || 'Action completed'}`, 'post');
+        
+        // Show notification
+        showNotification(`✅ ${result.message || 'POST request successful'}`, 'success');
+        
+        // Haptic feedback
+        if (tg?.HapticFeedback) {
+          tg.HapticFeedback.notificationOccurred('success');
+        }
+        
+        // If this was a get_data action, display the data
+        if (action === 'get_data' && result.data) {
+          displayData(result);
+        }
+        
+      } catch (error) {
+        addLog(`❌ POST Failed: ${error.message}`, 'error');
+        showNotification(`❌ POST Failed: ${error.message}`, 'error');
+        
+        if (tg?.HapticFeedback) {
+          tg.HapticFeedback.notificationOccurred('error');
+        }
+        
+      } finally {
+        if (button) {
+          setTimeout(() => {
+            button.disabled = false;
+          }, 1000);
+        }
+      }
+    }
+    
+    // Display data in the UI
+    function displayData(data) {
+      const container = document.getElementById('dataDisplay');
+      container.style.display = 'block';
+      
+      let html = '<div class="section-title" style="margin-bottom: 16px;">📊 Received Data</div>';
+      
+      // Helper function to format data
+      function formatData(obj, depth = 0) {
+        if (depth > 2) return JSON.stringify(obj); // Prevent infinite recursion
+        if (typeof obj !== 'object' || obj === null) return obj;
+        
+        let result = '';
+        for (const [key, value] of Object.entries(obj)) {
+          if (typeof value === 'object' && value !== null) {
+            result += `
+              <div class="data-item">
+                <div class="data-label">${key}:</div>
+                <div class="data-value" style="font-size: 12px; color: #64748b;">
+                  ${formatData(value, depth + 1)}
+                </div>
+              </div>
+            `;
+          } else {
+            result += `
+              <div class="data-item">
+                <div class="data-label">${key}:</div>
+                <div class="data-value">${value}</div>
+              </div>
+            `;
+          }
+        }
+        return result;
+      }
+      
+      html += formatData(data);
+      container.innerHTML = html;
+    }
+    
+    // Update status display
+    function updateStatus(status, message) {
+      const statusEl = document.getElementById('status');
+      statusEl.className = `status ${status}`;
+      
+      if (status === 'pending') {
+        statusEl.innerHTML = '<div class="spinner"></div><span>' + message + '</span>';
+      } else if (status === 'connected') {
+        statusEl.innerHTML = `
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <span>${message}</span>
+        `;
+      } else {
+        statusEl.innerHTML = `
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+          <span>${message}</span>
+        `;
+      }
+      
+      connectionStatus = status;
+    }
+    
+    // Add log entry
+    function addLog(message, type = 'info') {
+      const container = document.getElementById('logContainer');
+      const time = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.innerHTML = `<strong>[${time}]</strong> ${message}`;
+      container.prepend(entry);
+      
+      // Keep only last 50 logs
+      const entries = container.querySelectorAll('.log-entry');
+      if (entries.length > 50) {
+        entries[entries.length - 1].remove();
+      }
+    }
+    
+    // Clear all logs
+    function clearLogs() {
+      document.getElementById('logContainer').innerHTML = '';
+      addLog('Logs cleared', 'info');
+      showNotification('📋 Logs cleared', 'success');
+    }
+    
+    // Show notification
+    function showNotification(message, type = 'info') {
+      const notification = document.getElementById('notification');
+      const text = document.getElementById('notificationText');
+      const icon = notification.querySelector('.notification-icon');
+      
+      // Set icon based on type
+      let iconSvg = '';
+      switch (type) {
+        case 'success':
+          iconSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+          break;
+        case 'error':
+          iconSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+          break;
+        default:
+          iconSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+      }
+      
+      icon.innerHTML = iconSvg;
+      text.textContent = message;
+      notification.className = `notification ${type} show`;
+      
+      // Auto-hide after 3 seconds
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 3000);
+    }
+    
+    // Expose functions to global scope for button clicks
+    window.testGet = testGet;
+    window.testPost = testPost;
+    window.clearLogs = clearLogs;
   </script>
 </body>
-  </html>
+              </html>
