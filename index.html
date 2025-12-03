@@ -1,297 +1,143 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Balance WebApp — Demo</title>
+<meta charset="UTF-8">
+<title>Balance WebApp</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-  <style>
-    :root {
-      --accent: #3b82f6;
-      --bg: #f7f8fb;
-      --card: #ffffff;
-      --text: #111827;
-      --muted: #6b7280;
-    }
-    html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}
-    .wrap{max-width:720px;margin:20px auto;padding:16px}
-    .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(11,15,30,0.06)}
-    h1{margin:0 0 8px;font-size:20px}
-    .muted{color:var(--muted);font-size:13px;margin-bottom:12px}
-    .row{display:flex;gap:8px;align-items:center;margin:10px 0}
-    .big{font-size:42px;font-weight:700;color:var(--accent)}
-    .controls{display:flex;gap:8px;flex-wrap:wrap}
-    .btn{padding:10px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:600}
-    .btn-light{background:#eef2ff;color:#1f2937}
-    .btn-primary{background:var(--accent);color:white}
-    .status{margin-top:8px;font-size:13px}
-    #log{background:#0b1220;color:#8df7b6;padding:10px;height:160px;overflow:auto;border-radius:8px;font-family:monospace;font-size:12px}
-    .small{font-size:12px;color:var(--muted)}
-    .footer{margin-top:12px;font-size:12px;color:var(--muted)}
-    .input-inline {display:flex;gap:8px;align-items:center}
-    .badge {background:#e6eefc;padding:6px 8px;border-radius:8px;color:#0b3c78;font-weight:600}
-    .loading {opacity:0.6;pointer-events:none}
-  </style>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  text-align: center;
+  background: #f8f9fa;
+}
+.container {
+  max-width: 380px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+}
+h1 { margin-bottom: 10px; }
+.big { font-size: 40px; color: #007bff; font-weight: bold; }
+.btn {
+  padding: 12px 20px;
+  margin: 6px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #fff;
+  font-size: 16px;
+}
+.btn-red { background: #dc3545; }
+.btn-green { background: #28a745; }
+.btn-blue { background: #007bff; width: 100%; margin-top: 12px; }
+#log {
+  margin-top: 20px;
+  background: #111;
+  color: #0f0;
+  padding: 10px;
+  border-radius: 8px;
+  height: 180px;
+  overflow-y: auto;
+  font-size: 12px;
+  text-align: left;
+}
+</style>
 </head>
+
 <body>
-  <div class="wrap">
-    <div class="card" id="appCard">
-      <h1>Balance Demo WebApp</h1>
-      <div class="muted">This demo saves your balance through a per-user webhook (Bots.Business).</div>
+<div class="container">
+  <h1>Balance WebApp</h1>
+  <h2>Hello, <span id="name">Loading…</span></h2>
 
-      <div class="row">
-        <div style="flex:1">
-          <div class="small">User</div>
-          <div id="who" style="font-weight:700">—</div>
-        </div>
+  <div class="big" id="balance">0</div>
 
-        <div style="width:160px;text-align:right">
-          <div class="small">Balance</div>
-          <div id="bal" class="big">0</div>
-        </div>
-      </div>
-
-      <div class="row controls">
-        <button class="btn btn-light" onclick="change(-10)">-10</button>
-        <button class="btn btn-light" onclick="change(-5)">-5</button>
-        <button class="btn btn-light" onclick="change(5)">+5</button>
-        <button class="btn btn-light" onclick="change(10)">+10</button>
-        <div style="flex:1"></div>
-        <button id="saveBtn" class="btn btn-primary" onclick="save()">Save</button>
-      </div>
-
-      <div class="status" id="status">Status: <span id="statusText">initializing…</span></div>
-
-      <h4 style="margin-top:14px">Debug log</h4>
-      <div id="log"></div>
-
-      <div class="footer">If webhook returns HTML, copy the HTML snippet here and show me — I'll help diagnose.</div>
-    </div>
+  <div>
+    <button class="btn btn-red" onclick="change(-5)">-5</button>
+    <button class="btn btn-green" onclick="change(5)">+5</button>
   </div>
 
+  <button class="btn btn-blue" onclick="save()">Save Balance</button>
+
+  <div id="log"></div>
+</div>
+
 <script>
-/* ====================
-   Utilities & setup
-   ==================== */
-const el = id => document.getElementById(id);
-const logEl = el('log');
-function log(...args){
-  const s = args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
-  logEl.innerText += s + '\n';
-  logEl.scrollTop = logEl.scrollHeight;
-  console.log(...args);
-}
-function setStatus(text, ok){
-  el('statusText').innerText = text;
-  el('statusText').style.color = ok === false ? 'red' : (ok === true ? 'green' : '#666');
+const tg = Telegram.WebApp;
+tg.ready();
+tg.expand();
+
+// ===============================
+// Logging helper
+// ===============================
+function log(x) {
+  document.getElementById("log").innerText += x + "\n";
 }
 
-/* Telegram WebApp ready */
-const tg = window.Telegram?.WebApp;
-try{ tg?.ready(); }catch(e){}
-try{ if (tg) tg.expand(); } catch(e){}
+// Extract sync URL
+let syncUrl = new URL(location.href).searchParams.get("sync");
+log("SYNC URL = " + syncUrl);
 
-/* ====================
-   Extract sync url (robust)
-   ==================== */
-// Telegram appends a fragment (#tgWebAppData=...) after the query string.
-// Remove the fragment portion before reading search params.
-const hrefNoHash = location.href.split('#')[0];
-log('CLEAN URL:', hrefNoHash);
-
-// Accept either `sync` or `syncUrl` param names (some people use different names)
-const qs = new URL(hrefNoHash).searchParams;
-let syncParam = qs.get('sync') || qs.get('syncUrl') || qs.get('syncUserDataUrl') || '';
-if (!syncParam) {
-  log('ERROR: no sync param found in query string. Please open the WebApp from bot start button.');
-  setStatus('Missing sync parameter in URL. Open via bot.', false);
-  throw new Error('Missing sync parameter');
-}
-// decode in case bot encoded it twice
-const SYNC_URL = decodeURIComponent(syncParam);
-log('SYNC URL =', SYNC_URL);
-
-/* ====================
-   App state
-   ==================== */
 let balance = 0;
-let busy = false;
-const saveBtn = el('saveBtn');
 
-function setBusy(v){
-  busy = !!v;
-  if (busy) {
-    el('appCard').classList.add('loading');
-    saveBtn.disabled = true;
-  } else {
-    el('appCard').classList.remove('loading');
-    saveBtn.disabled = false;
-  }
+// ===============================
+// LOAD (GET)
+// ===============================
+function load() {
+  log("Sending GET request...");
+  fetch(syncUrl)
+    .then(r => r.json())
+    .then(data => {
+      log("GET RESPONSE: " + JSON.stringify(data));
+      if (data.success) {
+        document.getElementById("name").innerText =
+          data.user.first_name || data.user.username || "User";
+
+        balance = parseInt(data.user.balance);
+        document.getElementById("balance").innerText = balance;
+      } else {
+        log("Error loading: " + data.error);
+      }
+    })
+    .catch(err => log("GET ERROR: " + err));
 }
 
-/* ====================
-   Load logic (GET then fallback to POST)
-   ==================== */
-async function loadUser() {
-  setBusy(true);
-  setStatus('Loading user...');
-  log('Loading user (GET):', SYNC_URL);
+// ===============================
+// CHANGE
+// ===============================
+function change(v) {
+  balance += v;
+  document.getElementById("balance").innerText = balance;
+  log("Balance changed to " + balance);
+}
 
-  try {
-    // Try GET first
-    const r = await fetch(SYNC_URL, {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' },
-      cache: 'no-store',
-      mode: 'cors',
-      redirect: 'follow'
-    });
-
-    log('HTTP', r.status, r.statusText, 'content-type:', r.headers.get('content-type'));
-
-    // If response is JSON, parse; otherwise grab text (for debugging)
-    const ct = (r.headers.get('content-type') || '').toLowerCase();
-    if (ct.includes('application/json')) {
-      const j = await r.json();
-      handleLoadResponse(j);
-      setBusy(false);
-      return;
+// ===============================
+// SAVE (POST)
+// ===============================
+function save() {
+  log("Saving... POST " + balance);
+  fetch(syncUrl, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ balance: balance })
+  })
+  .then(r => r.json())
+  .then(data => {
+    log("POST RESPONSE: " + JSON.stringify(data));
+    if (data.success) {
+      tg.HapticFeedback.notificationOccurred("success");
     } else {
-      // If server returned HTML, try fallback POST load (some endpoints behave differently)
-      const txt = await r.text();
-      log('GET returned non-JSON body (first 1000 chars):', txt.slice(0,1000));
-      // fallback POST attempt
-      log('Attempting fallback load via POST { action: "load" }');
-      const r2 = await fetch(SYNC_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ action: 'load' }),
-        cache: 'no-store',
-        mode: 'cors',
-        redirect: 'follow'
-      });
-      log('Fallback POST status:', r2.status, 'ct:', r2.headers.get('content-type'));
-      const ct2 = (r2.headers.get('content-type') || '').toLowerCase();
-      if (ct2.includes('application/json')) {
-        const j2 = await r2.json();
-        handleLoadResponse(j2);
-        setBusy(false);
-        return;
-      } else {
-        const t2 = await r2.text();
-        log('Fallback POST also returned non-JSON (first 1000):', t2.slice(0,1000));
-        setStatus('Load failed: server returned HTML. See logs.', false);
-        setBusy(false);
-        return;
-      }
+      tg.HapticFeedback.notificationOccurred("error");
     }
-  } catch (err) {
-    log('Load exception:', String(err));
-    // network error: try one quick retry (best-effort)
-    try {
-      log('Retrying GET once after error...');
-      const r = await fetch(SYNC_URL, { method: 'GET', headers: { 'Accept': 'application/json' }, cache: 'no-store', mode: 'cors' });
-      const ct = (r.headers.get('content-type')||'').toLowerCase();
-      if (ct.includes('application/json')) {
-        const j = await r.json();
-        handleLoadResponse(j);
-        setBusy(false);
-        return;
-      } else {
-        const t = await r.text();
-        log('Retry returned non-JSON:', t.slice(0,1000));
-        setStatus('Load failed after retry. See logs.', false);
-        setBusy(false);
-        return;
-      }
-    } catch (err2) {
-      log('Retry exception:', String(err2));
-      setStatus('Load error: network or CORS', false);
-      setBusy(false);
-      return;
-    }
-  }
+  })
+  .catch(err => log("POST ERROR: " + err));
 }
 
-/* ====================
-   Handle JSON response from load
-   ==================== */
-function handleLoadResponse(j) {
-  log('Load response JSON:', j);
-  if (j && (j.ok === true || j.success === true)) {
-    // support both ok:true and success:true shapes
-    const user = j.user || j.data?.user || j.data || {};
-    const name = user.first_name || user.username || ('ID:' + (user.id || '?'));
-    el('who').innerText = name;
-    balance = parseInt(user.balance || 0, 10);
-    el('bal').innerText = balance;
-    setStatus('Loaded', true);
-    try{ tg?.HapticFeedback?.impactOccurred('light'); }catch(e){}
-  } else {
-    // server returned JSON but with errors
-    log('Server JSON indicates failure:', j);
-    setStatus('Load failed: ' + (j.error || (j.errors && j.errors[0]) || 'unknown'), false);
-  }
-}
-
-/* ====================
-   Change / Save
-   ==================== */
-function change(delta){
-  balance = (parseInt(balance||0,10) || 0) + delta;
-  el('bal').innerText = balance;
-  log('Balance changed to', balance);
-}
-
-async function save(){
-  if (busy) return;
-  setBusy(true);
-  setStatus('Saving...');
-  log('Saving balance to webhook (POST):', balance);
-
-  try {
-    const r = await fetch(SYNC_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ balance: balance }),
-      cache: 'no-store',
-      mode: 'cors',
-      redirect: 'follow'
-    });
-
-    log('Save HTTP', r.status, r.statusText, 'ct:', r.headers.get('content-type'));
-
-    const ct = (r.headers.get('content-type') || '').toLowerCase();
-    if (ct.includes('application/json')) {
-      const j = await r.json();
-      log('Save JSON:', j);
-      if (j && (j.ok === true || j.success === true)) {
-        setStatus('Saved ✓', true);
-        try{ tg?.HapticFeedback?.notificationOccurred('success'); }catch(e){}
-      } else {
-        setStatus('Save failed: ' + (j.error || 'unknown'), false);
-        try{ tg?.HapticFeedback?.notificationOccurred('error'); }catch(e){}
-      }
-    } else {
-      // not JSON — show HTML snippet for debugging
-      const txt = await r.text();
-      log('Save returned non-JSON (first 2000 chars):', txt.slice(0,2000));
-      setStatus('Save returned HTML (see debug log)', false);
-      try{ tg?.HapticFeedback?.notificationOccurred('error'); }catch(e){}
-    }
-  } catch (err) {
-    log('Save exception:', String(err));
-    setStatus('Save error: network or CORS', false);
-  } finally {
-    setBusy(false);
-  }
-}
-
-/* Start loading on open */
-loadUser();
-
+load();
 </script>
 </body>
-  </html>
+</html>
