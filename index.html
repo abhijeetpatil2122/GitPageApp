@@ -1,143 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Balance WebApp</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Balance App</title>
 
-<style>
-body {
-  font-family: Arial, sans-serif;
-  padding: 20px;
-  text-align: center;
-  background: #f8f9fa;
-}
-.container {
-  max-width: 380px;
-  margin: 0 auto;
-  background: #fff;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 0 8px rgba(0,0,0,0.1);
-}
-h1 { margin-bottom: 10px; }
-.big { font-size: 40px; color: #007bff; font-weight: bold; }
-.btn {
-  padding: 12px 20px;
-  margin: 6px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  color: #fff;
-  font-size: 16px;
-}
-.btn-red { background: #dc3545; }
-.btn-green { background: #28a745; }
-.btn-blue { background: #007bff; width: 100%; margin-top: 12px; }
-#log {
-  margin-top: 20px;
-  background: #111;
-  color: #0f0;
-  padding: 10px;
-  border-radius: 8px;
-  height: 180px;
-  overflow-y: auto;
-  font-size: 12px;
-  text-align: left;
-}
-</style>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: var(--tg-theme-bg-color, #f2f2f2);
+      color: var(--tg-theme-text-color, #000);
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    .box {
+      max-width: 400px;
+      margin: auto;
+      background: var(--tg-theme-secondary-bg-color, #fff);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,.1);
+    }
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      border: none;
+      border-radius: 8px;
+      background: var(--tg-theme-button-color, #007bff);
+      color: var(--tg-theme-button-text-color, #fff);
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .danger { background: #dc3545 !important; }
+    .success { background: #28a745 !important; }
+    .log { font-size: 12px; margin-top: 10px; text-align: left; opacity: 0.7; }
+  </style>
 </head>
 
 <body>
-<div class="container">
-  <h1>Balance WebApp</h1>
-  <h2>Hello, <span id="name">Loading…</span></h2>
+  <div id="app" class="box">
+    <h1>{{ botName }}</h1>
+    <h3>Hello, {{ user.first_name || user.username || "User" }}</h3>
 
-  <div class="big" id="balance">0</div>
+    <h2>Balance: {{ balance }}</h2>
 
-  <div>
-    <button class="btn btn-red" onclick="change(-5)">-5</button>
-    <button class="btn btn-green" onclick="change(5)">+5</button>
+    <div>
+      <button class="danger" @click="add(-5)">-5</button>
+      <button class="success" @click="add(5)">+5</button>
+    </div>
+
+    <button @click="save">SAVE</button>
+
+    <div class="log">
+      <p v-for="(l,i) in logs" :key="i">🟦 {{ l }}</p>
+    </div>
   </div>
 
-  <button class="btn btn-blue" onclick="save()">Save Balance</button>
-
-  <div id="log"></div>
-</div>
-
 <script>
-const tg = Telegram.WebApp;
+const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
 
-// ===============================
-// Logging helper
-// ===============================
-function log(x) {
-  document.getElementById("log").innerText += x + "\n";
-}
-
-// Extract sync URL
-let syncUrl = new URL(location.href).searchParams.get("sync");
-log("SYNC URL = " + syncUrl);
-
-let balance = 0;
-
-// ===============================
-// LOAD (GET)
-// ===============================
-function load() {
-  log("Sending GET request...");
-  fetch(syncUrl)
-    .then(r => r.json())
-    .then(data => {
-      log("GET RESPONSE: " + JSON.stringify(data));
-      if (data.success) {
-        document.getElementById("name").innerText =
-          data.user.first_name || data.user.username || "User";
-
-        balance = parseInt(data.user.balance);
-        document.getElementById("balance").innerText = balance;
-      } else {
-        log("Error loading: " + data.error);
-      }
-    })
-    .catch(err => log("GET ERROR: " + err));
-}
-
-// ===============================
-// CHANGE
-// ===============================
-function change(v) {
-  balance += v;
-  document.getElementById("balance").innerText = balance;
-  log("Balance changed to " + balance);
-}
-
-// ===============================
-// SAVE (POST)
-// ===============================
-function save() {
-  log("Saving... POST " + balance);
-  fetch(syncUrl, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ balance: balance })
-  })
-  .then(r => r.json())
-  .then(data => {
-    log("POST RESPONSE: " + JSON.stringify(data));
-    if (data.success) {
-      tg.HapticFeedback.notificationOccurred("success");
-    } else {
-      tg.HapticFeedback.notificationOccurred("error");
+const App = {
+  data() {
+    return {
+      syncUrl: "",
+      botName: "Balance App",
+      user: {},
+      balance: 0,
+      logs: []
     }
-  })
-  .catch(err => log("POST ERROR: " + err));
-}
+  },
 
-load();
+  methods: {
+    log(x) { this.logs.push(x); },
+
+    async load() {
+      this.log("🔵 Sending LOAD request...");
+
+      const res = await fetch(this.syncUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "load" })
+      });
+
+      const data = await res.json().catch(e => this.log("JSON ERROR: " + e));
+
+      this.log("Load response: " + JSON.stringify(data));
+
+      if (data.success) {
+        this.user = data.user;
+        this.balance = data.user.balance;
+      } else {
+        this.log("❌ Load failed");
+      }
+    },
+
+    add(n) {
+      this.balance += n;
+      this.log("Balance changed → " + this.balance);
+      tg.HapticFeedback.impactOccurred("light");
+    },
+
+    async save() {
+      this.log("🔵 Saving balance...");
+
+      const res = await fetch(this.syncUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save",
+          balance: this.balance
+        })
+      });
+
+      const data = await res.json().catch(e => this.log("JSON ERROR: " + e));
+
+      this.log("Save response: " + JSON.stringify(data));
+
+      if (data.success) {
+        tg.showAlert("Balance Saved!");
+        tg.HapticFeedback.notificationOccurred("success");
+      } else {
+        tg.showAlert("Save failed.");
+      }
+    }
+  },
+
+  mounted() {
+    const q = new URL(window.location.href).searchParams;
+    this.syncUrl = q.get("sync");
+    this.botName = q.get("botName") || "Balance App";
+
+    this.log("Sync URL = " + this.syncUrl);
+
+    if (!this.syncUrl)
+      return this.log("❌ No sync URL found!");
+
+    this.load();
+  }
+};
+
+Vue.createApp(App).mount("#app");
 </script>
+
 </body>
 </html>
