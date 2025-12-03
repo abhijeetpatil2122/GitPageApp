@@ -1,108 +1,108 @@
-<!-- Command: index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title><% options.botName %> - Balance WebApp</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif; 
-      background: #f8f9fa; 
-      padding: 20px; 
-      margin: 0; 
-      text-align: center;
-    }
-    .container {
-      max-width: 400px; 
-      margin: 0 auto; 
-      background: #fff; 
-      padding: 20px; 
-      border-radius: 6px; 
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    h1, h2 {
-      margin: 10px 0;
-    }
-    button {
-      margin: 5px; 
-      padding: 10px 15px; 
-      border: none; 
-      border-radius: 4px; 
-      cursor: pointer; 
-      color: #fff;
-    }
-    .btn-primary { background: #007bff; }
-    .btn-danger  { background: #dc3545; }
-    .btn-success { background: #28a745; }
-  </style>
+<meta charset="UTF-8">
+<title>BB GET Test WebApp</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+body { font-family: Arial; padding:20px; background:#f0f0f0; }
+.btn { padding:10px 20px; background:#007bff; color:white; border:none; margin:10px; border-radius:6px; }
+textarea { width:100%; height:180px; margin-top:15px; padding:10px; }
+</style>
 </head>
+
 <body>
-  <div id="app" class="container">
-    <h1><% options.botName %> WebApp</h1>
-    <h2>Hello, {{ user.username || "Player" }}!</h2>
-    <h3>Your Balance: {{ user.balance }}</h3>
+<h2>🔵 BB WebApp GET Debugger</h2>
 
-    <div>
-      <button class="btn-danger" @click="changeBalance(-5)">-5</button>
-      <button class="btn-success" @click="changeBalance(5)">+5</button>
-    </div>
-    <div>
-      <button class="btn-primary" @click="saveBalance">Save Balance</button>
-    </div>
-  </div>
+<p id="userInfo">Loading...</p>
+<p><b>Balance:</b> <span id="bal">?</span></p>
 
-  <!-- VueJS -->
-  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.min.js"></script>
+<button class="btn" onclick="loadData()">Load Balance (GET)</button>
+<button class="btn" onclick="save()">Save +5 (POST)</button>
 
-  <!-- Optional external JS file -->
-  <script src="<% options.jsApp %>"></script>
+<h3>Debug Log:</h3>
+<textarea id="log"></textarea>
 
-  <script>
-    const app = Vue.createApp({
-      data() {
-        return {
-          user: {
-            username: "",
-            balance: 0
-          },
-          // The personal sync URL for this user
-          syncUserDataUrl: new URL(window.location.href).searchParams.get("syncUserDataUrl")
-        };
-      },
-      methods: {
-        // Load user data (balance, username) from the bot
-        loadUserData() {
-          fetch(this.syncUserDataUrl)
-            .then(res => res.json())
-            .then(data => {
-              this.user = data.user;
-            })
-            .catch(err => console.error("Error loading user data:", err));
-        },
-        // Increase or decrease the user's balance
-        changeBalance(amount) {
-          this.user.balance = parseInt(this.user.balance) + amount;
-        },
-        // Save the updated balance to the bot
-        saveBalance() {
-          fetch(this.syncUserDataUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ balance: this.user.balance })
-          })
-          .then(() => {
-            alert("Balance saved! Check your Telegram chat for confirmation.");
-          })
-          .catch(err => console.error("Error saving balance:", err));
-        }
-      },
-      mounted() {
-        this.loadUserData();
-      }
+<script>
+
+const tg = Telegram.WebApp;
+tg.ready();
+
+let params = new URLSearchParams(location.search);
+
+let sync = params.get("sync");
+let botName = params.get("botName");
+let userId = params.get("userId");
+
+log("SYNC URL: " + sync);
+log("userId: " + userId);
+log("botName: " + botName);
+
+// Load user from GET
+async function loadData(){
+  log("\n--- SENDING GET REQUEST ---\n" + sync);
+
+  try {
+    let res = await fetch(sync, { method: "GET" });
+
+    let txt = await res.text();   // read raw text first
+    log("RAW RESPONSE:\n" + txt.substring(0,500));
+
+    try {
+      let json = JSON.parse(txt);
+      log("PARSED JSON: " + JSON.stringify(json));
+
+      document.getElementById("bal").innerHTML = json.user.balance;
+      document.getElementById("userInfo").innerHTML = "Hi, " + json.user.username;
+
+    } catch (e) {
+      log("❌ JSON parse error: " + e);
+    }
+
+  } catch (err) {
+    log("❌ GET fetch error: " + err);
+  }
+}
+
+
+
+// POST save
+async function save(){
+
+  let newBal = (parseInt(document.getElementById("bal").innerHTML) || 0) + 5;
+
+  log("\n--- SENDING POST --- " + newBal);
+
+  try {
+    let res = await fetch(sync, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ balance: newBal })
     });
 
-    app.mount("#app");
-  </script>
+    let txt = await res.text();
+    log("RAW POST RESPONSE:\n" + txt.substring(0,500));
+
+    try {
+      let json = JSON.parse(txt);
+      document.getElementById("bal").innerHTML = newBal;
+    } catch(e){
+      log("❌ JSON parse error after POST");
+    }
+
+  } catch(err){
+    log("❌ POST error: " + err);
+  }
+}
+
+
+function log(msg){
+  let logBox = document.getElementById("log");
+  logBox.value += msg + "\n";
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+</script>
 </body>
 </html>
