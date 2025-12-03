@@ -20,17 +20,20 @@ body {
   border-radius:6px;
 }
 .log {
-  font-size: 12px;
-  color: #444;
-  margin-top: 15px;
-  white-space: pre-wrap;
-  text-align: left;
+  background:#000;
+  color:#0f0;
+  padding:10px;
+  height:150px;
+  overflow-y:auto;
+  text-align:left;
+  font-size:12px;
+  margin-top:20px;
 }
 </style>
 </head>
 
 <body>
-<h2>Hello <span id="name">User</span></h2>
+<h2>Hello <span id="name">...</span></h2>
 <h1>Balance: <span id="bal">0</span></h1>
 
 <div>
@@ -42,109 +45,83 @@ body {
   <button class="btn" onclick="save()">Save</button>
 </div>
 
-<div class="log" id="logBox"></div>
+<div id="log" class="log"></div>
 
 <script>
 const tg = Telegram.WebApp;
 tg.ready();
-tg.expand();
 
-// -------- LOGGER --------
 function log(msg){
-  console.log(msg);
-  document.getElementById("logBox").textContent += msg + "\n";
+  let box = document.getElementById("log");
+  box.innerHTML += msg + "<br>";
+  box.scrollTop = box.scrollHeight;
 }
 
-// -------- SYNC URL DETECTION --------
-// Best, safest, 100% working
-let rawHash = location.hash.substring(1);
-let sync = decodeURIComponent(rawHash);
+// FIX: Remove Telegram hash part before extracting params
+let cleanUrl = location.href.split("#")[0];
+let sync = new URL(cleanUrl).searchParams.get("sync");
 
-log("Final sync URL:");
-log(sync);
+log("CLEAN URL = " + cleanUrl);
+log("SYNC URL = " + sync);
 
-// 1️⃣ Try Telegram initDataUnsafe.start_param
-if (tg.initDataUnsafe && tg.initDataUnsafe.start_param) {
-  syncUrl = tg.initDataUnsafe.start_param;
-  log("Got sync URL from start_param:");
-  log(syncUrl);
-}
-
-// 2️⃣ Fallback: URL hash (#encodedURL)
-if (!syncUrl && location.hash.length > 1) {
-  syncUrl = decodeURIComponent(location.hash.substring(1));
-  log("Got sync URL from HASH:");
-  log(syncUrl);
-}
-
-// 3️⃣ Fallback: Query param (browser preview only)
-if (!syncUrl) {
-  syncUrl = new URL(location.href).searchParams.get("sync");
-  if (syncUrl) {
-    log("Got sync URL from query param:");
-    log(syncUrl);
-  }
-}
-
-if (!syncUrl) {
-  log("❌ ERROR: No sync URL available!");
-  tg.showAlert("No sync URL provided!");
-}
-
-// -------- BALANCE LOGIC --------
 let balance = 0;
 
-// Load user data
-function load(){
-  log("Loading user data...");
-  fetch(syncUrl, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ action:"load" })
-  })
-  .then(r => r.json())
-  .then(d => {
-    log("Load response:");
-    log(JSON.stringify(d, null, 2));
+async function load(){
+  log("Loading user...");
 
-    document.getElementById("name").textContent = d.user.first_name || "User";
-    balance = d.user.balance;
-    document.getElementById("bal").textContent = balance;
-  })
-  .catch(err => {
-    log("❌ Load error: " + err);
-  });
+  try {
+    let res = await fetch(sync, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ action:"load" })
+    });
+
+    let data = await res.json();
+    log("Load response: " + JSON.stringify(data));
+
+    if(data.ok){
+      document.getElementById("name").textContent = data.user.first_name;
+      balance = data.user.balance;
+      document.getElementById("bal").textContent = balance;
+    } else {
+      log("Error: " + data.error);
+    }
+
+  } catch (e){
+    log("Exception: " + e.message);
+  }
 }
 
 function change(v){
   balance += v;
   document.getElementById("bal").textContent = balance;
-  tg.HapticFeedback?.impactOccurred("light");
   log("Balance changed to " + balance);
 }
 
-function save(){
-  log("Saving balance: " + balance);
-  fetch(syncUrl, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ action:"save", balance })
-  })
-  .then(r => r.json())
-  .then(d => {
-    log("Save response:");
-    log(JSON.stringify(d, null, 2));
-    tg.showAlert("Saved!");
-    tg.HapticFeedback?.notificationOccurred("success");
-  })
-  .catch(err => {
-    log("❌ Save error: " + err);
-    tg.HapticFeedback?.notificationOccurred("error");
-  });
+async function save(){
+  log("Saving balance:", balance);
+
+  try {
+    let res = await fetch(sync, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ action:"save", balance })
+    });
+
+    let data = await res.json();
+    log("Save response: " + JSON.stringify(data));
+
+    if(data.ok){
+      tg.showAlert("Saved!");
+    } else {
+      tg.showAlert("Failed: " + data.error);
+    }
+  } catch (e){
+    log("Exception: " + e.message);
+  }
 }
 
 load();
 </script>
-
 </body>
 </html>
