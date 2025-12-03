@@ -1,696 +1,204 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#6366f1" />
-  <title>Balance Demo</title>
-  
-  <!-- Telegram WebApp SDK -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  <title>Balance WebApp</title>
+
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  
-  <!-- Vue.js -->
-  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.min.js"></script>
-  
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.min.js"></script>
+
   <style>
     :root {
-      --primary: #6366f1;
-      --success: #10b981;
-      --danger: #ef4444;
-      --dark: #1f2937;
-      --light: #f9fafb;
-      --border: #e5e7eb;
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --accent: #2a8bf2;
+      --muted: #6b7280;
     }
-    
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-    
-    html, body {
-      height: 100%;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #1f2937;
-    }
-    
-    .container {
-      min-height: 100vh;
-      padding: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .card {
-      width: 100%;
-      max-width: 400px;
-      background: white;
-      border-radius: 20px;
-      padding: 30px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-      text-align: center;
-    }
-    
-    .header {
-      margin-bottom: 30px;
-    }
-    
-    .logo {
-      width: 60px;
-      height: 60px;
-      background: var(--primary);
-      border-radius: 15px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 15px;
-      color: white;
-      font-size: 24px;
-      font-weight: bold;
-    }
-    
-    h1 {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--dark);
-      margin-bottom: 8px;
-    }
-    
-    .subtitle {
-      color: #6b7280;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: var(--light);
-      padding: 15px;
-      border-radius: 12px;
-      margin-bottom: 25px;
-    }
-    
-    .user-avatar {
-      width: 48px;
-      height: 48px;
-      background: var(--primary);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: 600;
-      font-size: 18px;
-    }
-    
-    .user-details {
-      text-align: left;
-      flex: 1;
-    }
-    
-    .user-name {
-      font-weight: 600;
-      color: var(--dark);
-      margin-bottom: 2px;
-    }
-    
-    .user-id {
-      font-size: 12px;
-      color: #6b7280;
-    }
-    
-    .balance-section {
-      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-      padding: 25px;
-      border-radius: 16px;
-      margin-bottom: 25px;
-      border: 1px solid var(--border);
-    }
-    
-    .balance-label {
-      font-size: 14px;
-      color: #64748b;
-      margin-bottom: 10px;
-      font-weight: 500;
-    }
-    
-    .balance {
-      font-size: 48px;
-      font-weight: 800;
-      color: var(--primary);
-      line-height: 1;
-    }
-    
-    .balance-currency {
-      font-size: 24px;
-      color: #94a3b8;
-      margin-left: 5px;
-    }
-    
-    .controls {
-      margin-bottom: 25px;
-    }
-    
-    .btn-group {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 15px;
-    }
-    
-    button {
-      border: none;
-      border-radius: 12px;
-      padding: 16px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    
-    button:active {
-      transform: scale(0.98);
-    }
-    
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none !important;
-    }
-    
-    .btn-danger {
-      background: var(--danger);
-      color: white;
-    }
-    
-    .btn-success {
-      background: var(--success);
-      color: white;
-    }
-    
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-      width: 100%;
-    }
-    
-    .save-btn {
-      margin-top: 10px;
-    }
-    
-    .status {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px;
-      border-radius: 10px;
-      margin-top: 20px;
-      font-size: 13px;
-      font-weight: 500;
-    }
-    
-    .status.connected {
-      background: #d1fae5;
-      color: #065f46;
-      border: 1px solid #a7f3d0;
-    }
-    
-    .status.disconnected {
-      background: #fee2e2;
-      color: #991b1b;
-      border: 1px solid #fecaca;
-    }
-    
-    .status.pending {
-      background: #fef3c7;
-      color: #92400e;
-      border: 1px solid #fde68a;
-    }
-    
-    .log {
-      margin-top: 20px;
-      text-align: left;
-    }
-    
-    .log-title {
-      font-size: 12px;
-      color: #6b7280;
-      margin-bottom: 8px;
-      font-weight: 600;
-    }
-    
-    .log-entry {
-      font-family: 'SF Mono', Monaco, Consolas, monospace;
-      font-size: 11px;
-      padding: 8px;
-      margin-bottom: 6px;
-      background: var(--light);
-      border-radius: 6px;
-      border-left: 3px solid var(--primary);
-      word-break: break-all;
-    }
-    
-    .error {
-      background: #fef2f2;
-      color: #991b1b;
-      padding: 12px;
-      border-radius: 10px;
-      margin-top: 15px;
-      font-size: 14px;
-      border-left: 4px solid var(--danger);
-    }
-    
-    .success {
-      background: #f0fdf4;
-      color: #166534;
-      padding: 12px;
-      border-radius: 10px;
-      margin-top: 15px;
-      font-size: 14px;
-      border-left: 4px solid var(--success);
-    }
-    
-    .loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 40px;
-      color: #6b7280;
-    }
-    
-    .loading-spinner {
-      width: 24px;
-      height: 24px;
-      border: 3px solid #e5e7eb;
-      border-top-color: var(--primary);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-right: 12px;
-    }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    
-    .sync-info {
-      font-size: 11px;
-      color: #6b7280;
-      margin-top: 15px;
-      padding: 8px;
-      background: var(--light);
-      border-radius: 6px;
-      border: 1px dashed var(--border);
-      word-break: break-all;
-    }
-    
-    .emoji {
-      font-size: 20px;
-    }
+    html,body { height:100%; margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial; background:var(--bg); color:#0f172a; }
+    .wrap { max-width:720px; margin:28px auto; padding:20px; }
+    .card { background:var(--card); border-radius:12px; box-shadow: 0 6px 18px rgba(2,6,23,0.06); padding:18px; }
+    h1 { margin:0 0 8px; font-size:20px; }
+    .meta { color:var(--muted); font-size:13px; margin-bottom:12px; }
+    .balance { font-size:40px; font-weight:700; color:var(--accent); margin:12px 0; }
+    .btns { display:flex; gap:10px; margin:12px 0; flex-wrap:wrap; }
+    button { cursor:pointer; border:0; padding:10px 14px; border-radius:10px; color:white; font-weight:600; }
+    .btn-danger { background:#ef4444; }
+    .btn-success { background:#10b981; }
+    .btn-primary { background:var(--accent); width:100%; }
+    .log { margin-top:14px; font-family:monospace; font-size:13px; color:#111827; background:#fafafa; padding:10px; border-radius:8px; max-height:160px; overflow:auto; border:1px solid #eee; }
+    .small { font-size:13px; color:var(--muted); }
+    .error { color:#b91c1c; }
   </style>
 </head>
 <body>
-  <div id="app" class="container">
+  <div id="app" class="wrap">
     <div class="card">
-      <div v-if="loading" class="loading">
-        <div class="loading-spinner"></div>
-        <span>Loading...</span>
-      </div>
-      
-      <div v-else-if="error" class="error">
-        {{ error }}
-        <button class="btn-primary" @click="retry" style="margin-top: 10px; background: var(--danger);">
-          Retry Connection
-        </button>
-      </div>
-      
+      <h1>{{ botName }} — Balance Demo</h1>
+      <div class="meta">Secure per-user sync via webhook (POST-only).</div>
+
+      <div v-if="loading" class="small">Loading user…</div>
+
       <div v-else>
-        <div class="header">
-          <div class="logo">💰</div>
-          <h1>{{ botName }}</h1>
-          <div class="subtitle">Balance Demo - GitHub Pages + BB Bot</div>
+        <div class="small">Hello, <strong>{{ user.first_name || user.username || 'User' }}</strong></div>
+        <div class="balance">{{ user.balance }}</div>
+
+        <div class="btns">
+          <button class="btn-danger" @click="change(-5)">-5</button>
+          <button class="btn-danger" @click="change(-10)">-10</button>
+          <button class="btn-success" @click="change(5)">+5</button>
+          <button class="btn-success" @click="change(10)">+10</button>
         </div>
-        
-        <div class="user-info">
-          <div class="user-avatar">
-            {{ user.first_name ? user.first_name[0] : 'U' }}
-          </div>
-          <div class="user-details">
-            <div class="user-name">{{ user.first_name || user.username || 'User' }}</div>
-            <div class="user-id">ID: {{ user.id }}</div>
-          </div>
-        </div>
-        
-        <div class="balance-section">
-          <div class="balance-label">Current Balance</div>
-          <div class="balance">
-            {{ user.balance }}
-            <span class="balance-currency">💎</span>
-          </div>
-        </div>
-        
-        <div class="controls">
-          <div class="btn-group">
-            <button class="btn-danger" @click="changeBalance(-10)" :disabled="user.balance < 10">
-              <span class="emoji">➖</span>
-              <span>-10</span>
-            </button>
-            <button class="btn-danger" @click="changeBalance(-5)" :disabled="user.balance < 5">
-              <span class="emoji">➖</span>
-              <span>-5</span>
-            </button>
-            <button class="btn-success" @click="changeBalance(5)">
-              <span class="emoji">➕</span>
-              <span>+5</span>
-            </button>
-            <button class="btn-success" @click="changeBalance(10)">
-              <span class="emoji">➕</span>
-              <span>+10</span>
-            </button>
-          </div>
-          
-          <button class="btn-primary save-btn" @click="saveBalance" :disabled="saving || !hasChanges">
-            <span v-if="saving">
-              <div class="loading-spinner" style="width: 16px; height: 16px; border-width: 2px;"></div>
-              Saving...
-            </span>
-            <span v-else>
-              <span class="emoji">💾</span>
-              Save Balance {{ hasChanges ? '*' : '' }}
-            </span>
+
+        <div style="margin-top:8px;">
+          <button class="btn-primary" :disabled="saving" @click="save">
+            {{ saving ? 'Saving…' : 'Save Balance' }}
           </button>
         </div>
-        
-        <div class="status" :class="connectionStatus">
-          <span v-if="connectionStatus === 'connected'" class="emoji">✅</span>
-          <span v-else-if="connectionStatus === 'disconnected'" class="emoji">❌</span>
-          <span v-else class="emoji">🔄</span>
-          <span>{{ statusMessage }}</span>
+
+        <div style="margin-top:12px;">
+          <div class="small">Sync URL: <span class="small" v-if="syncUrl">{{ shortSync }}</span><span v-else class="error">missing</span></div>
         </div>
-        
-        <div v-if="successMessage" class="success">
-          {{ successMessage }}
-        </div>
-        
-        <div class="sync-info">
-          <div>Webhook URL: {{ syncUrl ? 'Loaded' : 'Missing' }}</div>
-          <div v-if="syncUrl" style="font-size: 9px; margin-top: 4px; opacity: 0.7;">
-            {{ syncUrl.substring(0, 50) }}...
-          </div>
-        </div>
-        
-        <div v-if="logs.length > 0" class="log">
-          <div class="log-title">Activity Log</div>
-          <div v-for="(log, index) in logs.slice(0, 3)" :key="index" class="log-entry">
-            {{ log }}
-          </div>
-          <div v-if="logs.length > 3" style="font-size: 10px; color: #6b7280; text-align: center; margin-top: 5px;">
-            ... and {{ logs.length - 3 }} more entries
-          </div>
+
+        <div class="log" v-if="logs.length">
+          <div v-for="(l,i) in logs" :key="i">{{ l }}</div>
         </div>
       </div>
+
+      <div v-if="error" style="margin-top:12px;" class="error">{{ error }}</div>
     </div>
   </div>
 
   <script>
-  const { createApp, ref, reactive, computed, onMounted } = Vue;
-  
-  createApp({
-    setup() {
-      // Initialize Telegram WebApp
-      const tg = window.Telegram?.WebApp || null;
-      if (tg) {
-        try {
-          tg.ready();
-          tg.expand();
-          tg.setHeaderColor('#6366f1');
-          tg.setBackgroundColor('#667eea');
-        } catch (e) {
-          console.warn('Telegram WebApp init failed:', e);
-        }
-      }
-      
-      // Get URL parameters
-      const urlParams = new URLSearchParams(window.location.search);
-      const syncUrl = urlParams.get('sync');
-      const botName = urlParams.get('botName') || 'Balance Demo';
-      const userId = urlParams.get('userId');
-      const username = urlParams.get('username') || 'User';
-      
-      // State
-      const user = reactive({
-        id: userId,
-        username: username,
-        first_name: username,
-        balance: 0,
-        originalBalance: 0
-      });
-      
-      const loading = ref(true);
-      const saving = ref(false);
-      const error = ref('');
-      const successMessage = ref('');
-      const logs = reactive([]);
-      const connectionStatus = ref('pending');
-      const statusMessage = ref('Connecting...');
-      
-      // Computed properties
-      const hasChanges = computed(() => {
-        return user.balance !== user.originalBalance;
-      });
-      
-      // Helper functions
-      function addLog(message) {
-        const time = new Date().toLocaleTimeString();
-        logs.unshift(`[${time}] ${message}`);
-        if (logs.length > 20) logs.pop();
-        console.log(message);
-      }
-      
-      function updateStatus(status, message) {
-        connectionStatus.value = status;
-        statusMessage.value = message;
-      }
-      
-      function showSuccess(msg) {
-        successMessage.value = msg;
-        setTimeout(() => {
-          successMessage.value = '';
-        }, 3000);
-        
-        // Haptic feedback
-        if (tg?.HapticFeedback) {
-          try {
-            tg.HapticFeedback.notificationOccurred('success');
-          } catch (e) {}
-        }
-      }
-      
-      function showError(msg) {
-        error.value = msg;
-        
-        // Haptic feedback
-        if (tg?.HapticFeedback) {
-          try {
-            tg.HapticFeedback.notificationOccurred('error');
-          } catch (e) {}
-        }
-      }
-      
-      function retry() {
-        error.value = '';
-        loading.value = true;
-        loadUserData();
-      }
-      
-      // API functions
-      async function loadUserData() {
-        if (!syncUrl) {
-          showError('❌ No sync URL provided. Please open this app from your Telegram bot using the /start command.');
-          loading.value = false;
-          updateStatus('disconnected', 'No sync URL');
-          return;
-        }
-        
-        updateStatus('pending', 'Loading data...');
-        addLog('Loading user data from bot...');
-        
-        try {
-          const response = await fetch(syncUrl, {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json'
-            }
-          });
-          
-          addLog(`GET Response: HTTP ${response.status}`);
-          
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          
-          const data = await response.json();
-          addLog(`GET Success: ${data.message || 'Data loaded'}`);
-          
-          if (!data.success) {
-            throw new Error(data.error || 'Failed to load data');
-          }
-          
-          // Update user data
-          if (data.user) {
-            user.id = data.user.id || userId;
-            user.username = data.user.username || username;
-            user.first_name = data.user.first_name || username;
-            user.balance = parseInt(data.user.balance || 0, 10);
-            user.originalBalance = user.balance;
-          }
-          
-          updateStatus('connected', 'Connected to bot');
-          showSuccess('✅ Data loaded successfully!');
-          loading.value = false;
-          
-        } catch (err) {
-          console.error('Load failed:', err);
-          showError(`Failed to load data: ${err.message}`);
-          updateStatus('disconnected', 'Connection failed');
-          loading.value = false;
-        }
-      }
-      
-      async function saveBalance() {
-        if (!hasChanges.value) {
-          showSuccess('No changes to save');
-          return;
-        }
-        
-        if (!syncUrl) {
-          showError('No sync URL available');
-          return;
-        }
-        
-        saving.value = true;
-        addLog(`Saving balance: ${user.balance}`);
-        
-        try {
-          // BB expects POST data to be sent as JSON object
-          const postData = {
-            balance: user.balance
-          };
-          
-          const response = await fetch(syncUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify(postData)
-          });
-          
-          addLog(`POST Response: HTTP ${response.status}`);
-          
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          
-          const data = await response.json();
-          addLog(`POST Success: ${data.message || 'Balance saved'}`);
-          
-          if (!data.success) {
-            throw new Error(data.error || 'Failed to save balance');
-          }
-          
-          // Update original balance
-          user.originalBalance = user.balance;
-          
-          showSuccess('✅ Balance saved successfully!');
-          updateStatus('connected', 'Data synced');
-          
-        } catch (err) {
-          console.error('Save failed:', err);
-          showError(`Failed to save: ${err.message}`);
-          updateStatus('disconnected', 'Sync failed');
-          
-        } finally {
-          saving.value = false;
-        }
-      }
-      
-      function changeBalance(amount) {
-        const newBalance = user.balance + amount;
-        
-        if (newBalance < 0) {
-          showError('Balance cannot be negative');
-          
-          // Haptic feedback
-          if (tg?.HapticFeedback) {
-            try {
-              tg.HapticFeedback.notificationOccurred('warning');
-            } catch (e) {}
-          }
-          
-          return;
-        }
-        
-        user.balance = newBalance;
-        addLog(`Balance changed: ${amount > 0 ? '+' : ''}${amount} = ${user.balance}`);
-        
-        // Haptic feedback
-        if (tg?.HapticFeedback) {
-          try {
-            tg.HapticFeedback.impactOccurred('light');
-          } catch (e) {}
-        }
-      }
-      
-      // Initialize
-      onMounted(() => {
-        addLog('App initialized');
-        addLog(`Bot: ${botName}`);
-        addLog(`User ID: ${userId || 'Unknown'}`);
-        addLog(`Sync URL: ${syncUrl ? 'Found' : 'Missing'}`);
-        
-        if (!syncUrl) {
-          showError('Please open this app from your Telegram bot using the /start command.');
-          loading.value = false;
-          return;
-        }
-        
-        loadUserData();
-      });
-      
-      return {
-        // State
-        user,
-        loading,
-        saving,
-        error,
-        successMessage,
-        logs,
-        connectionStatus,
-        statusMessage,
-        
-        // Computed
-        hasChanges,
-        
-        // Data
-        botName,
-        syncUrl,
-        
-        // Methods
-        changeBalance,
-        saveBalance,
-        retry
-      };
+  (function () {
+    const tg = window.Telegram?.WebApp || null;
+    if (tg) {
+      try { tg.ready(); tg.expand(); } catch(e) { console.warn("tg.ready failed", e); }
     }
-  }).mount('#app');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const syncUrl = urlParams.get('sync') || urlParams.get('syncUrl') || null;
+    const botNameParam = urlParams.get('botName') || document.title || 'Balance WebApp';
+
+    // Vue app
+    const { createApp, ref, reactive, computed } = Vue;
+
+    createApp({
+      setup() {
+        const user = reactive({ id: null, username: null, first_name: null, balance: 0 });
+        const loading = ref(true);
+        const saving = ref(false);
+        const error = ref('');
+        const logs = reactive([]);
+        const botName = ref(botNameParam);
+
+        function log(msg) {
+          const t = new Date().toLocaleTimeString();
+          logs.unshift(`[${t}] ${msg}`);
+          if (logs.length > 100) logs.pop();
+          console.debug(msg);
+        }
+
+        const shortSync = computed(() => {
+          if (!syncUrl) return '';
+          try {
+            const u = new URL(syncUrl);
+            return u.hostname + u.pathname + (u.search ? u.search.slice(0,40) + '…' : '');
+          } catch(e) { return syncUrl.slice(0,80); }
+        });
+
+        // robust POST helper that expects JSON response.
+        async function postJson(payload) {
+          if (!syncUrl) throw new Error("Sync URL missing");
+          log(`POST ${syncUrl} -> ${JSON.stringify(payload)}`);
+          const res = await fetch(syncUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          const ct = res.headers.get('content-type') || '';
+          log(`HTTP ${res.status} content-type: ${ct}`);
+          // if server returned HTML or non-json, capture text and throw
+          if (!ct.includes('application/json')) {
+            const txt = await res.text();
+            log("Non-JSON response (first 512 chars): " + txt.slice(0,512).replace(/\n/g,' '));
+            throw new Error("Server did not return JSON");
+          }
+          const data = await res.json();
+          log("Response JSON: " + JSON.stringify(data));
+          return data;
+        }
+
+        async function load() {
+          loading.value = true;
+          error.value = '';
+          try {
+            log("Loading user (POST {method: 'load'})");
+            const data = await postJson({ method: 'load' });
+            if (!data || !data.success) {
+              const e = (data && data.error) ? data.error : "Invalid load response";
+              throw new Error(e);
+            }
+            const u = data.user || {};
+            user.id = u.id || null;
+            user.username = u.username || null;
+            user.first_name = u.first_name || null;
+            user.balance = parseInt(u.balance || 0, 10);
+            log("Loaded user: " + (user.first_name || user.username || user.id));
+          } catch (err) {
+            console.error(err);
+            error.value = "Load error: " + (err.message || err);
+            log("❌ Load error: " + (err.message || err));
+          } finally {
+            loading.value = false;
+          }
+        }
+
+        async function save() {
+          saving.value = true;
+          error.value = '';
+          try {
+            log("Saving balance: " + user.balance);
+            const data = await postJson({ method: 'save', balance: user.balance });
+            if (!data || !data.success) {
+              throw new Error((data && data.error) ? data.error : "Save failed");
+            }
+            log("Saved OK: " + JSON.stringify(data));
+            // optional: haptic
+            try { tg?.HapticFeedback?.notificationOccurred?.('success'); } catch(e) {}
+          } catch (err) {
+            console.error(err);
+            error.value = "Save error: " + (err.message || err);
+            log("❌ Save error: " + (err.message || err));
+            try { tg?.HapticFeedback?.notificationOccurred?.('error'); } catch(e) {}
+          } finally {
+            saving.value = false;
+          }
+        }
+
+        function change(delta) {
+          user.balance = parseInt(user.balance || 0, 10) + delta;
+          log("Balance changed to " + user.balance);
+          try { tg?.HapticFeedback?.impactOccurred?.('light'); } catch(e){}
+        }
+
+        // initialize
+        (async () => {
+          if (!syncUrl) {
+            error.value = "Missing sync URL parameter. Open from bot /start button.";
+            loading.value = false;
+            log("Missing sync URL parameter in page URL.");
+            return;
+          }
+          log("SYNC URL = " + syncUrl);
+          await load();
+        })();
+
+        return { user, loading, saving, error, logs, botName, load, save, change, shortSync, syncUrl };
+      }
+    }).mount('#app');
+  })();
   </script>
 </body>
-          </html>
+</html>
