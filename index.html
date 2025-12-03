@@ -1,108 +1,93 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>BB GET Test WebApp</title>
+<title>Balance Demo</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
-body { font-family: Arial; padding:20px; background:#f0f0f0; }
-.btn { padding:10px 20px; background:#007bff; color:white; border:none; margin:10px; border-radius:6px; }
-textarea { width:100%; height:180px; margin-top:15px; padding:10px; }
+  body { font-family: Arial; text-align:center; padding:20px; }
+  .btn { padding:10px 20px; background:#007bff; color:white; border:none; border-radius:6px; margin:5px; }
 </style>
 </head>
 
 <body>
-<h2>🔵 BB WebApp GET Debugger</h2>
+<h2>Hello <span id="username">...</span></h2>
+<h1>Balance: <span id="balance">0</span></h1>
 
-<p id="userInfo">Loading...</p>
-<p><b>Balance:</b> <span id="bal">?</span></p>
+<button class="btn" onclick="add(-5)">-5</button>
+<button class="btn" onclick="add(5)">+5</button>
+<br><br>
+<button class="btn" onclick="save()">Save</button>
 
-<button class="btn" onclick="loadData()">Load Balance (GET)</button>
-<button class="btn" onclick="save()">Save +5 (POST)</button>
-
-<h3>Debug Log:</h3>
-<textarea id="log"></textarea>
+<pre id="log" style="text-align:left; white-space:pre-wrap; margin-top:20px; font-size:12px;"></pre>
 
 <script>
-
 const tg = Telegram.WebApp;
 tg.ready();
 
-let params = new URLSearchParams(location.search);
-
-let sync = params.get("sync");
-let botName = params.get("botName");
-let userId = params.get("userId");
-
-log("SYNC URL: " + sync);
-log("userId: " + userId);
-log("botName: " + botName);
-
-// Load user from GET
-async function loadData(){
-  log("\n--- SENDING GET REQUEST ---\n" + sync);
-
-  try {
-    let res = await fetch(sync, { method: "GET" });
-
-    let txt = await res.text();   // read raw text first
-    log("RAW RESPONSE:\n" + txt.substring(0,500));
-
-    try {
-      let json = JSON.parse(txt);
-      log("PARSED JSON: " + JSON.stringify(json));
-
-      document.getElementById("bal").innerHTML = json.user.balance;
-      document.getElementById("userInfo").innerHTML = "Hi, " + json.user.username;
-
-    } catch (e) {
-      log("❌ JSON parse error: " + e);
-    }
-
-  } catch (err) {
-    log("❌ GET fetch error: " + err);
-  }
+function log(m){ 
+  document.getElementById("log").textContent += m + "\n"; 
 }
 
+let sync = new URL(location.href).searchParams.get("sync");
+log("SYNC URL = " + sync);
 
+let balance = 0;
 
-// POST save
-async function save(){
+// ==========================
+// LOAD USER (POST)
+// ==========================
+function loadUser(){
+  log("Sending {action: 'load'}");
 
-  let newBal = (parseInt(document.getElementById("bal").innerHTML) || 0) + 5;
+  fetch(sync, {
+    method:"POST",
+    headers:{ "Content-Type": "application/json" },
+    body: JSON.stringify({ action:"load" })
+  })
+  .then(r => r.json())
+  .then(d => {
+    log("Load response: " + JSON.stringify(d));
 
-  log("\n--- SENDING POST --- " + newBal);
+    if (!d.ok) { log("Load error"); return; }
 
-  try {
-    let res = await fetch(sync, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ balance: newBal })
-    });
+    document.getElementById("username").textContent =
+      d.user.first_name || d.user.username || "User";
 
-    let txt = await res.text();
-    log("RAW POST RESPONSE:\n" + txt.substring(0,500));
-
-    try {
-      let json = JSON.parse(txt);
-      document.getElementById("bal").innerHTML = newBal;
-    } catch(e){
-      log("❌ JSON parse error after POST");
-    }
-
-  } catch(err){
-    log("❌ POST error: " + err);
-  }
+    balance = d.user.balance;
+    document.getElementById("balance").textContent = balance;
+  })
+  .catch(err => log("EXCEPTION(load): " + err));
 }
 
-
-function log(msg){
-  let logBox = document.getElementById("log");
-  logBox.value += msg + "\n";
-  logBox.scrollTop = logBox.scrollHeight;
+// ==========================
+// ADD BALANCE
+// ==========================
+function add(v){
+  balance += v;
+  document.getElementById("balance").textContent = balance;
+  log("Local balance changed: " + balance);
 }
 
+// ==========================
+// SAVE BALANCE (POST)
+// ==========================
+function save(){
+  log("Saving balance via POST: " + balance);
+
+  fetch(sync, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ balance })
+  })
+  .then(r => r.json())
+  .then(d => log("SAVE RESPONSE: " + JSON.stringify(d)))
+  .catch(err => log("EXCEPTION(save): " + err));
+}
+
+// start
+loadUser();
 </script>
 </body>
 </html>
