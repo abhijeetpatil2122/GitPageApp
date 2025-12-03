@@ -1,127 +1,135 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Balance App</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-<style>
-body { 
-  font-family: sans-serif;
-  padding:20px; 
-  text-align:center;
-}
-.btn { 
-  padding:10px 20px; 
-  margin:5px;
-  border:none;
-  background:#007bff; 
-  color:white;
-  border-radius:6px;
-}
-.log {
-  background:#000;
-  color:#0f0;
-  padding:10px;
-  height:150px;
-  overflow-y:auto;
-  text-align:left;
-  font-size:12px;
-  margin-top:20px;
-}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Balance WebApp (Demo)</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body{font-family:system-ui,Arial;margin:18px;color:#111}
+    .row{margin:10px 0}
+    .btn{padding:10px 14px;border-radius:8px;border:0;cursor:pointer}
+    .btn-primary{background:#2b74ff;color:#fff}
+    .btn-ghost{background:#eee}
+    .log{background:#0b0b0b;color:#0f0;padding:10px;height:160px;overflow:auto;font-family:monospace;font-size:12px}
+    .status{margin-top:8px}
+  </style>
 </head>
-
 <body>
-<h2>Hello <span id="name">...</span></h2>
-<h1>Balance: <span id="bal">0</span></h1>
+  <h2 id="title">Balance Demo WebApp</h2>
+  <div class="row">Hello: <strong id="who">...</strong></div>
+  <div class="row">Balance: <strong id="bal">0</strong></div>
 
-<div>
-  <button class="btn" onclick="change(-5)">-5</button>
-  <button class="btn" onclick="change(5)">+5</button>
-</div>
+  <div class="row">
+    <button class="btn btn-ghost" onclick="change(-5)">-5</button>
+    <button class="btn btn-ghost" onclick="change(5)">+5</button>
+    <button class="btn btn-ghost" onclick="change(10)">+10</button>
+  </div>
 
-<div>
-  <button class="btn" onclick="save()">Save</button>
-</div>
+  <div class="row">
+    <button class="btn btn-primary" onclick="save()">Save to Bot</button>
+  </div>
 
-<div id="log" class="log"></div>
+  <div class="row status" id="status"></div>
+
+  <h4>Debug log</h4>
+  <div id="log" class="log"></div>
 
 <script>
-const tg = Telegram.WebApp;
-tg.ready();
-
-function log(msg){
-  let box = document.getElementById("log");
-  box.innerHTML += msg + "<br>";
-  box.scrollTop = box.scrollHeight;
-}
-
-// FIX: Remove Telegram hash part before extracting params
-let cleanUrl = location.href.split("#")[0];
-let sync = new URL(cleanUrl).searchParams.get("sync");
-
-log("CLEAN URL = " + cleanUrl);
-log("SYNC URL = " + sync);
-
-let balance = 0;
-
-async function load(){
-  log("Loading user...");
-
-  try {
-    let res = await fetch(sync, {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ action:"load" })
-    });
-
-    let data = await res.json();
-    log("Load response: " + JSON.stringify(data));
-
-    if(data.ok){
-      document.getElementById("name").textContent = data.user.first_name;
-      balance = data.user.balance;
-      document.getElementById("bal").textContent = balance;
-    } else {
-      log("Error: " + data.error);
-    }
-
-  } catch (e){
-    log("Exception: " + e.message);
+  // helper logging
+  function log(...args){
+    const el = document.getElementById('log');
+    el.innerHTML += args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ') + '\n';
+    el.scrollTop = el.scrollHeight;
+    console.log(...args);
   }
-}
 
-function change(v){
-  balance += v;
-  document.getElementById("bal").textContent = balance;
-  log("Balance changed to " + balance);
-}
+  // Telegram WebApp init
+  const tg = window.Telegram?.WebApp;
+  try { tg?.ready(); } catch(e){ /* ignore */ }
 
-async function save(){
-  log("Saving balance:", balance);
+  // IMPORTANT: Telegram will append a hash (#tgWebAppData=...) after the query string.
+  // Remove the hash before reading searchParams.
+  const hrefClean = location.href.split('#')[0];
+  const syncParam = new URL(hrefClean).searchParams.get('sync') || '';
 
-  try {
-    let res = await fetch(sync, {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ action:"save", balance })
-    });
+  log('CLEAN URL:', hrefClean);
+  log('sync param (raw):', syncParam);
 
-    let data = await res.json();
-    log("Save response: " + JSON.stringify(data));
-
-    if(data.ok){
-      tg.showAlert("Saved!");
-    } else {
-      tg.showAlert("Failed: " + data.error);
-    }
-  } catch (e){
-    log("Exception: " + e.message);
+  if (!syncParam) {
+    log('ERROR: sync parameter not provided in URL.');
+    document.getElementById('status').textContent = 'Error: sync param missing. Open via bot Start button.';
+    document.getElementById('status').style.color = 'red';
+    throw new Error('sync param missing');
   }
-}
 
-load();
+  // store sync url
+  const SYNC_URL = decodeURIComponent(syncParam);
+
+  // application state
+  let balance = 0;
+
+  async function load() {
+    log('Loading user data from webhook (GET)...');
+    try {
+      const r = await fetch(SYNC_URL, { method: 'GET', headers: { 'Content-Type':'application/json' } });
+      const j = await r.json();
+      log('Load response:', j);
+      if (j && j.ok && j.user) {
+        document.getElementById('who').textContent = j.user.first_name || j.user.username || ('ID:' + (j.user.id||'?'));
+        balance = parseInt(j.user.balance || 0, 10);
+        document.getElementById('bal').textContent = balance;
+        document.getElementById('status').textContent = 'Loaded';
+        document.getElementById('status').style.color = 'green';
+        tg?.HapticFeedback?.impactOccurred('light');
+      } else {
+        log('Load error (not ok):', j);
+        document.getElementById('status').textContent = 'Load failed: ' + (j && j.error ? j.error : 'unknown');
+        document.getElementById('status').style.color = 'red';
+      }
+    } catch (err) {
+      log('Load exception:', err);
+      document.getElementById('status').textContent = 'Connection error';
+      document.getElementById('status').style.color = 'red';
+    }
+  }
+
+  function change(delta){
+    balance = (parseInt(balance||0,10) || 0) + delta;
+    document.getElementById('bal').textContent = balance;
+    log('balance changed ->', balance);
+  }
+
+  async function save(){
+    log('Saving balance via POST to webhook:', balance);
+    document.getElementById('status').textContent = 'Saving...';
+    try {
+      const r = await fetch(SYNC_URL, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({ balance: balance })
+      });
+      const j = await r.json();
+      log('Save response:', j);
+      if (j && j.ok) {
+        document.getElementById('status').textContent = 'Saved ✓';
+        document.getElementById('status').style.color = 'green';
+        tg?.HapticFeedback?.notificationOccurred('success');
+      } else {
+        document.getElementById('status').textContent = 'Save failed: ' + (j && j.error ? j.error : 'unknown');
+        document.getElementById('status').style.color = 'red';
+        tg?.HapticFeedback?.notificationOccurred('error');
+      }
+    } catch (err) {
+      log('Save exception:', err);
+      document.getElementById('status').textContent = 'Connection error';
+      document.getElementById('status').style.color = 'red';
+      tg?.HapticFeedback?.notificationOccurred('error');
+    }
+  }
+
+  // start
+  load();
 </script>
 </body>
 </html>
