@@ -1,108 +1,74 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>BB GET Test WebApp</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-<style>
-body { font-family: Arial; padding:20px; background:#f0f0f0; }
-.btn { padding:10px 20px; background:#007bff; color:white; border:none; margin:10px; border-radius:6px; }
-textarea { width:100%; height:180px; margin-top:15px; padding:10px; }
-</style>
+  <meta charset="UTF-8" />
+  <title>My WebApp</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+    .box { max-width: 400px; margin: auto; background: #fff;
+           padding: 20px; border-radius: 6px; box-shadow: 0 2px 5px #0003; }
+    button { padding: 10px 20px; margin: 5px; border: 0; border-radius: 4px;
+             cursor: pointer; }
+    .save { background: #28a745; color: white; }
+    .minus { background: #dc3545; color: white; }
+    .plus { background: #007bff; color: white; }
+  </style>
 </head>
 
 <body>
-<h2>🔵 BB WebApp GET Debugger</h2>
+<div class="box">
+  <h2 id="title">Loading WebApp...</h2>
+  <p><b>User:</b> <span id="user"></span></p>
+  <p><b>Balance:</b> <span id="balance"></span></p>
 
-<p id="userInfo">Loading...</p>
-<p><b>Balance:</b> <span id="bal">?</span></p>
-
-<button class="btn" onclick="loadData()">Load Balance (GET)</button>
-<button class="btn" onclick="save()">Save +5 (POST)</button>
-
-<h3>Debug Log:</h3>
-<textarea id="log"></textarea>
+  <button class="minus" onclick="change(-5)">-5</button>
+  <button class="plus" onclick="change(5)">+5</button>
+  <br>
+  <button class="save" onclick="save()">Save</button>
+</div>
 
 <script>
+// --- Get values from query params ---
+let params = new URL(window.location.href).searchParams;
 
-const tg = Telegram.WebApp;
-tg.ready();
+let webhookUrl = params.get("sync");  // bot-generated personal webhook
+let botName = params.get("bot") || "MyBot";
 
-let params = new URLSearchParams(location.search);
+document.getElementById("title").innerText = botName + " WebApp";
 
-let sync = params.get("sync");
-let botName = params.get("botName");
-let userId = params.get("userId");
+let user = { username: "", balance: 0 };
 
-log("SYNC URL: " + sync);
-log("userId: " + userId);
-log("botName: " + botName);
+// Load data via GET from webhook
+function loadData(){
+  fetch(webhookUrl)
+    .then(r => r.json())
+    .then(data => {
+      user.username = data.user.username;
+      user.balance = data.user.balance;
 
-// Load user from GET
-async function loadData(){
-  log("\n--- SENDING GET REQUEST ---\n" + sync);
-
-  try {
-    let res = await fetch(sync, { method: "GET" });
-
-    let txt = await res.text();   // read raw text first
-    log("RAW RESPONSE:\n" + txt.substring(0,500));
-
-    try {
-      let json = JSON.parse(txt);
-      log("PARSED JSON: " + JSON.stringify(json));
-
-      document.getElementById("bal").innerHTML = json.user.balance;
-      document.getElementById("userInfo").innerHTML = "Hi, " + json.user.username;
-
-    } catch (e) {
-      log("❌ JSON parse error: " + e);
-    }
-
-  } catch (err) {
-    log("❌ GET fetch error: " + err);
-  }
+      document.getElementById("user").innerText = user.username;
+      document.getElementById("balance").innerText = user.balance;
+    })
+    .catch(err => console.error("GET error:", err));
 }
 
-
-
-// POST save
-async function save(){
-
-  let newBal = (parseInt(document.getElementById("bal").innerHTML) || 0) + 5;
-
-  log("\n--- SENDING POST --- " + newBal);
-
-  try {
-    let res = await fetch(sync, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ balance: newBal })
-    });
-
-    let txt = await res.text();
-    log("RAW POST RESPONSE:\n" + txt.substring(0,500));
-
-    try {
-      let json = JSON.parse(txt);
-      document.getElementById("bal").innerHTML = newBal;
-    } catch(e){
-      log("❌ JSON parse error after POST");
-    }
-
-  } catch(err){
-    log("❌ POST error: " + err);
-  }
+function change(amount){
+  user.balance = parseInt(user.balance) + amount;
+  document.getElementById("balance").innerText = user.balance;
 }
 
-
-function log(msg){
-  let logBox = document.getElementById("log");
-  logBox.value += msg + "\n";
-  logBox.scrollTop = logBox.scrollHeight;
+// SAVE: POST back to webhook
+function save(){
+  fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ balance: user.balance })
+  })
+  .then(() => alert("Saved to bot!"))
+  .catch(err => console.error("POST error:", err));
 }
 
+loadData();
 </script>
 </body>
 </html>
