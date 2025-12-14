@@ -25,7 +25,6 @@ button {
   border-radius: 4px;
   cursor: pointer;
 }
-.load { background: #2563eb; color: #fff; }
 .save { background: #16a34a; color: #fff; }
 .minus { background: #dc2626; color: #fff; }
 .plus { background: #22c55e; color: #000; }
@@ -56,12 +55,12 @@ Balance: <span id="balance">0</span><br><br>
 </div>
 
 <div class="box">
-<b>Last Request Payload</b>
+<b>Last Request</b>
 <pre id="requestBox">{}</pre>
 </div>
 
 <div class="box">
-<b>Last Bot Response (RAW JSON)</b>
+<b>Last Bot Response (JSON)</b>
 <pre id="responseBox">{}</pre>
 </div>
 
@@ -73,32 +72,47 @@ document.getElementById("webhook").innerText = webhookUrl;
 
 let user = { balance: 0 };
 
-// POST helper
-function post(data){
+// -------- GET LOAD --------
+function load(){
   document.getElementById("requestBox").innerText =
-    JSON.stringify(data, null, 2);
+    "GET " + webhookUrl;
 
-  return fetch(webhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
+  fetch(webhookUrl, {
+    method: "GET",
+    headers: { "Accept": "application/json" }
   })
   .then(r => r.json())
   .then(res => {
     document.getElementById("responseBox").innerText =
       JSON.stringify(res, null, 2);
-    return res;
-  });
-}
 
-// Load user data
-function load(){
-  post({ action: "load" }).then(res => {
     if(res.user){
       user.balance = res.user.balance;
       document.getElementById("username").innerText = res.user.username;
       document.getElementById("balance").innerText = user.balance;
     }
+  })
+  .catch(err => {
+    document.getElementById("responseBox").innerText = err.toString();
+  });
+}
+
+// -------- POST SAVE --------
+function save(){
+  let payload = { action: "save", balance: user.balance };
+
+  document.getElementById("requestBox").innerText =
+    JSON.stringify(payload, null, 2);
+
+  fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    document.getElementById("responseBox").innerText =
+      JSON.stringify(res, null, 2);
   });
 }
 
@@ -107,11 +121,7 @@ function change(v){
   document.getElementById("balance").innerText = user.balance;
 }
 
-function save(){
-  post({ action: "save", balance: user.balance });
-}
-
-// auto-load on open
+// auto-load
 load();
 </script>
 
