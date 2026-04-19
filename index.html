@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>BB Webhook Debug WebApp</title>
+<title>BB Webhook Demo</title>
 
 <style>
 body {
@@ -11,23 +11,37 @@ body {
   color: #e5e7eb;
   padding: 20px;
 }
+
 .box {
   background: #020617;
   border: 1px solid #334155;
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 15px;
   margin-bottom: 20px;
 }
+
 button {
   padding: 8px 12px;
   margin: 4px;
   border: 0;
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
 }
+
 .save { background: #16a34a; color: #fff; }
 .minus { background: #dc2626; color: #fff; }
 .plus { background: #22c55e; color: #000; }
+.reload { background: #3b82f6; color: #fff; }
+
+.status {
+  padding: 6px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.ok { background: #065f46; }
+.err { background: #7f1d1d; }
+
 pre {
   white-space: pre-wrap;
   word-break: break-word;
@@ -37,21 +51,22 @@ pre {
 
 <body>
 
-<h2>🧪 BB Webhook Debug WebApp</h2>
+<h2>🚀 BB Webhook Demo</h2>
 
 <div class="box">
-<b>Webhook URL</b>
-<pre id="webhook"></pre>
+<b>Status:</b>
+<div id="status" class="status ok">Ready</div>
 </div>
 
 <div class="box">
-<b>User Data</b><br>
+<b>User</b><br>
 Username: <span id="username">-</span><br>
 Balance: <span id="balance">0</span><br><br>
 
 <button class="minus" onclick="change(-5)">-5</button>
 <button class="plus" onclick="change(5)">+5</button>
-<button class="save" onclick="save()">Save Balance</button>
+<button class="save" onclick="save()">💾 Save</button>
+<button class="reload" onclick="load()">🔄 Reload</button>
 </div>
 
 <div class="box">
@@ -60,7 +75,7 @@ Balance: <span id="balance">0</span><br><br>
 </div>
 
 <div class="box">
-<b>Last Bot Response (JSON)</b>
+<b>Response</b>
 <pre id="responseBox">{}</pre>
 </div>
 
@@ -68,37 +83,53 @@ Balance: <span id="balance">0</span><br><br>
 const params = new URLSearchParams(window.location.search);
 const webhookUrl = params.get("sync");
 
-document.getElementById("webhook").innerText = webhookUrl;
-
 let user = { balance: 0 };
 
-// LOAD (GET)
+function setStatus(text, ok=true){
+  let el = document.getElementById("status");
+  el.innerText = text;
+  el.className = "status " + (ok ? "ok" : "err");
+}
+
+// LOAD
 function load(){
+  setStatus("Loading...");
+
   document.getElementById("requestBox").innerText =
     "GET " + webhookUrl;
 
-  fetch(webhookUrl, {
-    method: "GET",
-    headers: { "Accept": "application/json" }
-  })
+  fetch(webhookUrl)
   .then(r => r.json())
   .then(res => {
+
     document.getElementById("responseBox").innerText =
       JSON.stringify(res, null, 2);
 
-    if(res.user){
+    if(res.ok && res.user){
       user.balance = res.user.balance || 0;
-      document.getElementById("username").innerText = res.user.username || "-";
-      document.getElementById("balance").innerText = user.balance;
+
+      document.getElementById("username").innerText =
+        res.user.username || "-";
+
+      document.getElementById("balance").innerText =
+        user.balance;
+
+      setStatus("Loaded successfully ✅");
+    } else {
+      setStatus("Load failed ❌", false);
     }
+
   })
   .catch(err => {
     document.getElementById("responseBox").innerText = err.toString();
+    setStatus("Network error ❌", false);
   });
 }
 
-// SAVE (POST)
+// SAVE
 function save(){
+  setStatus("Saving...");
+
   let payload = { balance: user.balance };
 
   document.getElementById("requestBox").innerText =
@@ -111,16 +142,30 @@ function save(){
   })
   .then(r => r.json())
   .then(res => {
+
     document.getElementById("responseBox").innerText =
       JSON.stringify(res, null, 2);
+
+    if(res.ok){
+      setStatus("Saved successfully 💾");
+    } else {
+      setStatus("Save failed ❌", false);
+    }
+
+  })
+  .catch(err => {
+    document.getElementById("responseBox").innerText = err.toString();
+    setStatus("Network error ❌", false);
   });
 }
 
+// CHANGE
 function change(v){
   user.balance += v;
   document.getElementById("balance").innerText = user.balance;
 }
 
+// AUTO LOAD
 load();
 </script>
 
