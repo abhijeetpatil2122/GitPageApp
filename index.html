@@ -15,32 +15,24 @@ body {
 .box {
   background: #020617;
   border: 1px solid #334155;
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 15px;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 button {
   padding: 8px 12px;
   margin: 4px;
   border: 0;
-  border-radius: 5px;
+  border-radius: 4px;
   cursor: pointer;
 }
 
-.save { background: #16a34a; color: #fff; }
-.minus { background: #dc2626; color: #fff; }
 .plus { background: #22c55e; color: #000; }
+.minus { background: #dc2626; color: #fff; }
+.save { background: #16a34a; color: #fff; }
+.reset { background: #f59e0b; color: #000; }
 .reload { background: #3b82f6; color: #fff; }
-
-.status {
-  padding: 6px;
-  border-radius: 5px;
-  margin-bottom: 10px;
-}
-
-.ok { background: #065f46; }
-.err { background: #7f1d1d; }
 
 pre {
   white-space: pre-wrap;
@@ -51,12 +43,7 @@ pre {
 
 <body>
 
-<h2>🚀 BB Webhook Demo</h2>
-
-<div class="box">
-<b>Status:</b>
-<div id="status" class="status ok">Ready</div>
-</div>
+<h2>🤖 BB Webhook Demo</h2>
 
 <div class="box">
 <b>User</b><br>
@@ -65,8 +52,9 @@ Balance: <span id="balance">0</span><br><br>
 
 <button class="minus" onclick="change(-5)">-5</button>
 <button class="plus" onclick="change(5)">+5</button>
-<button class="save" onclick="save()">💾 Save</button>
-<button class="reload" onclick="load()">🔄 Reload</button>
+<button class="save" onclick="save()">Save</button>
+<button class="reset" onclick="resetBal()">Reset</button>
+<button class="reload" onclick="load()">Reload</button>
 </div>
 
 <div class="box">
@@ -85,16 +73,8 @@ const webhookUrl = params.get("sync");
 
 let user = { balance: 0 };
 
-function setStatus(text, ok=true){
-  let el = document.getElementById("status");
-  el.innerText = text;
-  el.className = "status " + (ok ? "ok" : "err");
-}
-
 // LOAD
 function load(){
-  setStatus("Loading...");
-
   document.getElementById("requestBox").innerText =
     "GET " + webhookUrl;
 
@@ -105,31 +85,22 @@ function load(){
     document.getElementById("responseBox").innerText =
       JSON.stringify(res, null, 2);
 
-    if(res.ok && res.user){
+    if(res.user){
       user.balance = res.user.balance || 0;
-
       document.getElementById("username").innerText =
         res.user.username || "-";
-
       document.getElementById("balance").innerText =
         user.balance;
-
-      setStatus("Loaded successfully ✅");
-    } else {
-      setStatus("Load failed ❌", false);
     }
-
   })
   .catch(err => {
-    document.getElementById("responseBox").innerText = err.toString();
-    setStatus("Network error ❌", false);
+    document.getElementById("responseBox").innerText =
+      err.toString();
   });
 }
 
 // SAVE
 function save(){
-  setStatus("Saving...");
-
   let payload = { balance: user.balance };
 
   document.getElementById("requestBox").innerText =
@@ -142,21 +113,16 @@ function save(){
   })
   .then(r => r.json())
   .then(res => {
-
     document.getElementById("responseBox").innerText =
       JSON.stringify(res, null, 2);
-
-    if(res.ok){
-      setStatus("Saved successfully 💾");
-    } else {
-      setStatus("Save failed ❌", false);
-    }
-
-  })
-  .catch(err => {
-    document.getElementById("responseBox").innerText = err.toString();
-    setStatus("Network error ❌", false);
   });
+}
+
+// RESET
+function resetBal(){
+  user.balance = 100;
+  document.getElementById("balance").innerText = user.balance;
+  save();
 }
 
 // CHANGE
