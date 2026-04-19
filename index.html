@@ -17,7 +17,7 @@ body {
   border: 1px solid #334155;
   border-radius: 6px;
   padding: 15px;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 button {
@@ -32,7 +32,6 @@ button {
 .minus { background: #dc2626; color: #fff; }
 .save { background: #16a34a; color: #fff; }
 .reset { background: #f59e0b; color: #000; }
-.reload { background: #3b82f6; color: #fff; }
 
 pre {
   white-space: pre-wrap;
@@ -43,10 +42,15 @@ pre {
 
 <body>
 
-<h2>🤖 BB Webhook Demo</h2>
+<h2>🧪 BB Webhook Demo</h2>
 
 <div class="box">
-<b>User</b><br>
+<b>Webhook URL</b>
+<pre id="webhook"></pre>
+</div>
+
+<div class="box">
+<b>User Data</b><br>
 Username: <span id="username">-</span><br>
 Balance: <span id="balance">0</span><br><br>
 
@@ -54,7 +58,6 @@ Balance: <span id="balance">0</span><br><br>
 <button class="plus" onclick="change(5)">+5</button>
 <button class="save" onclick="save()">Save</button>
 <button class="reset" onclick="resetBal()">Reset</button>
-<button class="reload" onclick="load()">Reload</button>
 </div>
 
 <div class="box">
@@ -63,13 +66,15 @@ Balance: <span id="balance">0</span><br><br>
 </div>
 
 <div class="box">
-<b>Response</b>
+<b>Last Bot Response (JSON)</b>
 <pre id="responseBox">{}</pre>
 </div>
 
 <script>
 const params = new URLSearchParams(window.location.search);
 const webhookUrl = params.get("sync");
+
+document.getElementById("webhook").innerText = webhookUrl;
 
 let user = { balance: 0 };
 
@@ -92,6 +97,7 @@ function load(){
       document.getElementById("balance").innerText =
         user.balance;
     }
+
   })
   .catch(err => {
     document.getElementById("responseBox").innerText =
