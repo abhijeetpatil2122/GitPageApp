@@ -72,12 +72,12 @@ document.getElementById("webhook").innerText = webhookUrl;
 
 let user = { balance: 0 };
 
-// -------- GET LOAD --------
+// LOAD (GET)
 function load(){
   document.getElementById("requestBox").innerText =
     "GET " + webhookUrl;
 
-  fetch(webhookUrl + "&action=load", {
+  fetch(webhookUrl, {
     method: "GET",
     headers: { "Accept": "application/json" }
   })
@@ -87,8 +87,8 @@ function load(){
       JSON.stringify(res, null, 2);
 
     if(res.user){
-      user.balance = res.user.balance;
-      document.getElementById("username").innerText = res.user.username;
+      user.balance = res.user.balance || 0;
+      document.getElementById("username").innerText = res.user.username || "-";
       document.getElementById("balance").innerText = user.balance;
     }
   })
@@ -97,9 +97,9 @@ function load(){
   });
 }
 
-// -------- POST SAVE --------
+// SAVE (POST)
 function save(){
-  let payload = { action: "save", balance: user.balance };
+  let payload = { balance: user.balance };
 
   document.getElementById("requestBox").innerText =
     JSON.stringify(payload, null, 2);
@@ -121,7 +121,6 @@ function change(v){
   document.getElementById("balance").innerText = user.balance;
 }
 
-// auto-load
 load();
 </script>
 
