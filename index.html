@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>BB Webhook Demo</title>
+<title>BB Webhook Debug WebApp</title>
 
 <style>
 body {
@@ -11,7 +11,6 @@ body {
   color: #e5e7eb;
   padding: 20px;
 }
-
 .box {
   background: #020617;
   border: 1px solid #334155;
@@ -19,7 +18,6 @@ body {
   padding: 15px;
   margin-bottom: 20px;
 }
-
 button {
   padding: 8px 12px;
   margin: 4px;
@@ -27,12 +25,9 @@ button {
   border-radius: 4px;
   cursor: pointer;
 }
-
-.plus { background: #22c55e; color: #000; }
-.minus { background: #dc2626; color: #fff; }
 .save { background: #16a34a; color: #fff; }
-.reset { background: #f59e0b; color: #000; }
-
+.minus { background: #dc2626; color: #fff; }
+.plus { background: #22c55e; color: #000; }
 pre {
   white-space: pre-wrap;
   word-break: break-word;
@@ -42,7 +37,7 @@ pre {
 
 <body>
 
-<h2>🧪 BB Webhook Demo</h2>
+<h2>🧪 BB Webhook Debug WebApp</h2>
 
 <div class="box">
 <b>Webhook URL</b>
@@ -56,8 +51,7 @@ Balance: <span id="balance">0</span><br><br>
 
 <button class="minus" onclick="change(-5)">-5</button>
 <button class="plus" onclick="change(5)">+5</button>
-<button class="save" onclick="save()">Save</button>
-<button class="reset" onclick="resetBal()">Reset</button>
+<button class="save" onclick="save()">Save Balance</button>
 </div>
 
 <div class="box">
@@ -78,8 +72,9 @@ document.getElementById("webhook").innerText = webhookUrl;
 
 let user = { balance: 0 };
 
-// LOAD
+// LOAD (GET)
 function load(){
+
   document.getElementById("requestBox").innerText =
     "GET " + webhookUrl;
 
@@ -105,8 +100,9 @@ function load(){
   });
 }
 
-// SAVE
+// SAVE (POST)
 function save(){
+
   let payload = { balance: user.balance };
 
   document.getElementById("requestBox").innerText =
@@ -119,19 +115,18 @@ function save(){
   })
   .then(r => r.json())
   .then(res => {
+
     document.getElementById("responseBox").innerText =
       JSON.stringify(res, null, 2);
+
+  })
+  .catch(err => {
+    document.getElementById("responseBox").innerText =
+      err.toString();
   });
 }
 
-// RESET
-function resetBal(){
-  user.balance = 100;
-  document.getElementById("balance").innerText = user.balance;
-  save();
-}
-
-// CHANGE
+// CHANGE BALANCE
 function change(v){
   user.balance += v;
   document.getElementById("balance").innerText = user.balance;
