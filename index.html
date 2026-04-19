@@ -77,7 +77,7 @@ function load(){
   document.getElementById("requestBox").innerText =
     "GET " + webhookUrl;
 
-  fetch(webhookUrl, {
+  fetch(webhookUrl + "&action=load", {
     method: "GET",
     headers: { "Accept": "application/json" }
   })
